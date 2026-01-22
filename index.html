@@ -16,7 +16,6 @@
       --radius: 18px;
       --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     }
-
     html[data-theme="light"]{
       --bg1:#f5f7ff; --bg2:#eefdf8;
       --card: rgba(255,255,255,.82); --card2: rgba(255,255,255,.60);
@@ -25,7 +24,6 @@
       --accent:#0ea5e9; --accent2:#22c55e; --danger:#d90429;
       --shadow: 0 18px 60px rgba(16,24,40,.12);
     }
-
     html[data-theme="midnight"]{
       --bg1:#050816; --bg2:#0b1029;
       --card: rgba(255,255,255,.07); --card2: rgba(255,255,255,.05);
@@ -34,7 +32,6 @@
       --accent:#a78bfa; --accent2:#60a5fa; --danger:#fb7185;
       --shadow: 0 18px 60px rgba(0,0,0,.55);
     }
-
     html[data-theme="sand"]{
       --bg1:#fff7ed; --bg2:#fef3c7;
       --card: rgba(255,255,255,.82); --card2: rgba(255,255,255,.60);
@@ -57,7 +54,6 @@
     }
 
     .wrap{ max-width:1100px; margin:0 auto; padding: 26px 18px 70px; }
-
     .topbar{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
     .brand{ display:flex; align-items:center; gap:12px; }
     .logo{
@@ -70,10 +66,8 @@
       box-shadow: var(--shadow);
       display:grid; place-items:center;
     }
-
     .brand h1{ font-size:18px; margin:0; }
     .brand p{ margin:2px 0 0; font-size:13px; color:var(--muted); }
-
     .actions{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
 
     .pill{
@@ -83,12 +77,10 @@
       background: var(--card2);
       backdrop-filter: blur(10px);
     }
-
     select{
       border:none; outline:none; background:transparent;
       color:var(--text); font-weight:800; font-size:13px; cursor:pointer;
     }
-
     .btn{
       border:1px solid var(--line);
       background: var(--card);
@@ -129,22 +121,19 @@
       box-shadow: var(--shadow);
       overflow:hidden;
     }
-
     .cardHeader{
       padding: 14px 16px;
       display:flex; align-items:center; justify-content:space-between; gap:10px;
       border-bottom:1px solid var(--line);
       background: linear-gradient(180deg, rgba(255,255,255,.07), transparent);
     }
-
     .title{ font-weight:1000; display:flex; gap:10px; align-items:center; }
     .sub{ color:var(--muted); font-size:12px; font-weight:800; }
-
     .cardBody{ padding:14px 16px 16px; }
 
     textarea{
       width:100%;
-      min-height: 260px;
+      min-height: 220px;
       border-radius: 14px;
       border:1px solid var(--line);
       background: rgba(0,0,0,.10);
@@ -175,54 +164,30 @@
     .status{ color:var(--muted); font-size:13px; font-weight:800; }
     .error{ color:var(--danger); font-weight:1000; font-size:13px; }
     .hint{ color:var(--muted); font-size:12px; font-weight:800; }
+    .mini{ font-size:12px; color:var(--muted); line-height:1.6; margin-top:10px; }
 
-    /* ========= TOAST / BANNER ========= */
-    .toast{
-      position: fixed;
-      top: 16px;
-      left: 50%;
-      transform: translateX(-50%) translateY(-10px);
-      z-index: 9999;
-      padding: 12px 14px;
-      border-radius: 999px;
-      border: 1px solid var(--line);
-      background: color-mix(in oklab, var(--card) 75%, rgba(0,0,0,.35));
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(10px);
-      color: var(--text);
-      font-weight: 1000;
-      letter-spacing: .2px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity .18s ease, transform .18s ease;
+    .chipRow{
+      display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;
     }
-    .toast.show{
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
+    .chip{
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      font-weight:900;
+      font-size:12px;
     }
-    .toast.success{ border-color: color-mix(in oklab, var(--accent2) 45%, var(--line)); }
-    .toast.error{ border-color: color-mix(in oklab, var(--danger) 45%, var(--line)); }
-    .toast .emoji{ font-size: 16px; }
   </style>
 </head>
 
 <body>
-  <!-- Toast banner -->
-  <div id="toast" class="toast" aria-live="polite">
-    <span class="emoji" id="toastEmoji">✅</span>
-    <span id="toastText">تم</span>
-  </div>
-
   <div class="wrap">
     <div class="topbar">
       <div class="brand">
         <div class="logo" aria-hidden="true"><span style="font-size:18px;">🛡️</span></div>
         <div>
           <h1>AMAALA EOC</h1>
-          <p>Spell Check • Clean Output • Adjusted Words</p>
+          <p>Spell Check • Clean Output • Protected Terms</p>
         </div>
       </div>
 
@@ -232,7 +197,7 @@
           <select id="lang">
             <option value="en-US" selected>English (US)</option>
             <option value="en-GB">English (UK)</option>
-            <option value="ar">Arabic (RTL)</option>
+            <option value="ar">Arabic (Beta)</option>
           </select>
         </div>
 
@@ -255,23 +220,40 @@
     </div>
 
     <div class="hero">
-      <h2>تقارير جاهزة للمشغل… بضغطة.</h2>
-      <p>الصق التقرير، سوِ تدقيق، وخذ نسخة مصححة + قائمة بالكلمات/العبارات اللي تغيرت فقط.</p>
+      <h2>Operator-ready reports in one click.</h2>
+      <p>
+        Add your company/system names to <b>Protected Terms</b> (مثل: ICAD) so the checker never changes them.
+      </p>
     </div>
 
     <div class="grid">
+      <!-- Input + Protected Terms -->
       <div class="card">
         <div class="cardHeader">
           <div>
             <div class="title">📝 Paste Report</div>
-            <div class="sub" id="dirHint">Direction: LTR</div>
+            <div class="sub">Tip: Add acronyms & company names to Protected Terms.</div>
           </div>
         </div>
+
         <div class="cardBody">
           <textarea id="input" placeholder="Paste EOC report here..."></textarea>
+
+          <div class="mini">
+            <b>Protected Terms (won’t be changed):</b>  
+            Type one per line (example: ICAD, TBCV, AMAALA, RSSSC).
+          </div>
+          <textarea id="protectedTerms" placeholder="ICAD&#10;TBCV&#10;AMAALA" style="min-height:110px;"></textarea>
+
+          <div class="chipRow" id="chips"></div>
+
+          <div class="mini">
+            Any exact match will be locked and cannot be replaced by the spell checker.
+          </div>
         </div>
       </div>
 
+      <!-- Outputs -->
       <div style="display:flex; flex-direction:column; gap:14px;">
         <div class="card">
           <div class="cardHeader">
