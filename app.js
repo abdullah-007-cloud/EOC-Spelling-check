@@ -5,38 +5,26 @@ const copyBtn = document.getElementById("copyBtn");
 const statusEl = document.getElementById("status");
 const errorEl = document.getElementById("error");
 const langEl = document.getElementById("lang");
+
 const changesEl = document.getElementById("changes");
 const changesCountEl = document.getElementById("changesCount");
 
-const kpiSuggestions = document.getElementById("kpiSuggestions");
-const kpiApplied = document.getElementById("kpiApplied");
-const kpiChars = document.getElementById("kpiChars");
+const themeSelect = document.getElementById("themeSelect");
 
-const themeBtn = document.getElementById("themeBtn");
-
-// ========= THEME =========
-function getSavedTheme() {
-  return localStorage.getItem("amaalaTheme") || "dark";
-}
+// ---------- THEMES ----------
 function setTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme);
   localStorage.setItem("amaalaTheme", theme);
 }
-setTheme(getSavedTheme());
-
-themeBtn?.addEventListener("click", () => {
-  const current = document.documentElement.getAttribute("data-theme") || "dark";
-  setTheme(current === "dark" ? "light" : "dark");
-});
-
-// ========= LIVE CHAR COUNT =========
-function updateCharCount() {
-  kpiChars.textContent = String((inputEl.value || "").length);
+function loadTheme() {
+  const saved = localStorage.getItem("amaalaTheme") || "dark";
+  setTheme(saved);
+  if (themeSelect) themeSelect.value = saved;
 }
-inputEl.addEventListener("input", updateCharCount);
-updateCharCount();
+themeSelect?.addEventListener("change", () => setTheme(themeSelect.value));
+loadTheme();
 
-// ========= LanguageTool Public API =========
+// ---------- LanguageTool API ----------
 async function checkSpelling(text, language) {
   const params = new URLSearchParams();
   params.append("text", text);
@@ -45,33 +33,35 @@ async function checkSpelling(text, language) {
   const res = await fetch("https://api.languagetool.org/v2/check", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: params.toString()
+    body: params.toString(),
   });
 
   if (!res.ok) throw new Error(`API error: ${res.status}`);
   return res.json();
 }
 
+// Apply from end -> start to keep offsets valid
 function applyCorrectionsAndTrack(originalText, matches) {
-  // Apply from end -> start so offsets remain correct
   const sorted = [...matches].sort((a, b) => b.offset - a.offset);
 
-  let updatedText = originalText;
+  let updated = originalText;
   const changes = [];
 
   for (const m of sorted) {
+    const before = originalText.slice(m.offset, m.offset + m.length);
+
+    // Only if there is a replacement suggestion
     if (!m.replacements || m.replacements.length === 0) continue;
 
-    const before = originalText.slice(m.offset, m.offset + m.length);
     const after = m.replacements[0].value;
 
-    // Show only applied + actually changed
+    // Only show + apply real changes
     if (!before || before === after) continue;
 
-    updatedText =
-      updatedText.slice(0, m.offset) +
+    updated =
+      updated.slice(0, m.offset) +
       after +
-      updatedText.slice(m.offset + m.length);
+      updated.slice(m.offset + m.length);
 
     changes.push({ offset: m.offset, before, after });
   }
@@ -79,32 +69,32 @@ function applyCorrectionsAndTrack(originalText, matches) {
   // Display in reading order
   changes.sort((a, b) => a.offset - b.offset);
 
-  return { updatedText, changes };
+  return { updated, changes };
 }
 
-function formatChanges(changes) {
-  if (!changes.length) return "(No adjusted words found)";
+function formatChanges(changes, suggestionsFound) {
+  // Always show something (so user doesn’t think it’s broken)
+  if (!changes.length) {
+    if (suggestionsFound > 0) {
+      return "(Suggestions were found, but no direct replacements were applied.)";
+    }
+    return "(No adjusted words found)";
+  }
   return changes.map(c => `${c.before} → ${c.after}`).join("\n");
 }
 
-function setKPIs({ suggestions, applied }) {
-  kpiSuggestions.textContent = suggestions ?? "—";
-  kpiApplied.textContent = applied ?? "—";
+function setBusy(b) {
+  checkBtn.disabled = b;
+  copyBtn.disabled = b;
 }
 
-function setBusy(isBusy) {
-  checkBtn.disabled = isBusy;
-  copyBtn.disabled = isBusy;
-}
-
-// ========= MAIN ACTION =========
+// ---------- MAIN ----------
 checkBtn.addEventListener("click", async () => {
   errorEl.textContent = "";
   statusEl.textContent = "";
   outputEl.textContent = "(Result will appear here)";
   changesEl.textContent = "(Changes will appear here)";
   changesCountEl.textContent = "";
-  setKPIs({ suggestions: "—", applied: "—" });
 
   const text = (inputEl.value || "").trim();
   if (!text) {
@@ -119,16 +109,15 @@ checkBtn.addEventListener("click", async () => {
     const data = await checkSpelling(text, langEl.value);
     const matches = data.matches || [];
 
-    const { updatedText, changes } = applyCorrectionsAndTrack(text, matches);
+    const { updated, changes } = applyCorrectionsAndTrack(text, matches);
 
-    outputEl.textContent = updatedText;
-    changesEl.textContent = formatChanges(changes);
+    outputEl.textContent = updated;
+    changesEl.textContent = formatChanges(changes, matches.length);
     changesCountEl.textContent = changes.length ? `(${changes.length})` : "";
 
-    setKPIs({ suggestions: matches.length, applied: changes.length });
     statusEl.textContent = "Done ✅";
-  } catch (err) {
-    console.error(err);
+  } catch (e) {
+    console.error(e);
     errorEl.textContent = "API blocked or rate-limited.";
     statusEl.textContent = "";
   } finally {
@@ -136,7 +125,7 @@ checkBtn.addEventListener("click", async () => {
   }
 });
 
-// ========= COPY =========
+// ---------- COPY ----------
 copyBtn.addEventListener("click", async () => {
   const text = outputEl.textContent || "";
   if (!text || text.startsWith("(")) return;
