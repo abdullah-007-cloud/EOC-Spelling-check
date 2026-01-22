@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AMAALA EOC</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; max-width: 980px; }
+    h1 { margin: 0 0 10px; }
+    .card { border: 1px solid #ddd; border-radius: 10px; padding: 16px; margin-top: 14px; }
+    textarea { width: 100%; min-height: 220px; padding: 12px; font-size: 14px; }
+    button { padding: 10px 14px; font-weight: 700; cursor: pointer; }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    select { padding: 8px; }
+    pre { white-space: pre-wrap; word-wrap: break-word; background: #f7f7f7; padding: 12px; border-radius: 10px; }
+    .muted { color: #666; font-size: 13px; }
+    .err { color: #b00020; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <h1>AMAALA EOC</h1>
+  <p class="muted">Paste your report, then click <b>Check Spelling</b>. The adjusted report will appear below.</p>
+
+  <div class="card">
+    <div class="row">
+      <label for="lang"><b>Language:</b></label>
+      <select id="lang">
+        <option value="en-US" selected>English (US)</option>
+        <option value="en-GB">English (UK)</option>
+        <option value="ar">Arabic (beta)</option>
+      </select>
+
+      <button id="checkBtn">Check Spelling</button>
+      <button id="copyBtn" title="Copy adjusted report">Copy Result</button>
+      <span id="status" class="muted"></span>
+    </div>
+
+    <div style="margin-top:12px;">
+      <textarea id="input" placeholder="Paste report here..."></textarea>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <b>Adjusted Report</b>
+      <span id="error" class="err"></span>
+    </div>
+    <pre id="output">(Result will appear here)</pre>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
