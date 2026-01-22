@@ -5,36 +5,43 @@ const copyBtn = document.getElementById("copyBtn");
 const statusEl = document.getElementById("status");
 const errorEl = document.getElementById("error");
 const langEl = document.getElementById("lang");
+
 const changesEl = document.getElementById("changes");
 const changesCountEl = document.getElementById("changesCount");
+
 const themeSelect = document.getElementById("themeSelect");
 
-const toastEl = document.getElementById("toast");
-const toastTextEl = document.getElementById("toastText");
-const toastEmojiEl = document.getElementById("toastEmoji");
+// ================== UI TRANSLATIONS ==================
+const UI_TEXT = {
+  "en": {
+    pastePlaceholder: "Paste EOC report here...",
+    checkBtn: "✅ Check Spelling",
+    copyBtn: "📋 Copy Result",
+    checking: "Checking…",
+    done: "Done ✅",
+    pasteFirst: "Paste a report first.",
+    apiError: "API blocked or rate-limited.",
+    resultPlaceholder: "(Result will appear here)",
+    changesPlaceholder: "(Changes will appear here)",
+    noChanges: "(No adjusted words found)",
+    someSuggestions: "(Suggestions were found, but no direct replacements were applied.)"
+  },
+  "ar": {
+    pastePlaceholder: "الصق تقرير مركز العمليات هنا...",
+    checkBtn: "✅ تدقيق إملائي",
+    copyBtn: "📋 نسخ التقرير",
+    checking: "جاري التدقيق…",
+    done: "تم ✅",
+    pasteFirst: "يرجى لصق التقرير أولاً.",
+    apiError: "الخدمة محجوبة أو تجاوزت الحد.",
+    resultPlaceholder: "(سيظهر التقرير المعدل هنا)",
+    changesPlaceholder: "(ستظهر الكلمات المعدلة هنا)",
+    noChanges: "(لا توجد كلمات معدلة)",
+    someSuggestions: "(تم العثور على ملاحظات، ولكن لم يتم تطبيق استبدال مباشر)"
+  }
+};
 
-const dirHintEl = document.getElementById("dirHint");
-
-// ---------- TOAST ----------
-let toastTimer = null;
-function showToast(message, type = "success") {
-  if (!toastEl) return;
-
-  toastEl.classList.remove("success", "error", "show");
-  toastEl.classList.add(type);
-
-  toastEmojiEl.textContent = type === "success" ? "✅" : "⚠️";
-  toastTextEl.textContent = message;
-
-  // show
-  requestAnimationFrame(() => toastEl.classList.add("show"));
-
-  // auto hide
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toastEl.classList.remove("show"), 2200);
-}
-
-// ---------- THEMES ----------
+// ================== THEME ==================
 function setTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme);
   localStorage.setItem("amaalaTheme", theme);
@@ -47,32 +54,31 @@ function loadTheme() {
 themeSelect?.addEventListener("change", () => setTheme(themeSelect.value));
 loadTheme();
 
-// ---------- RTL/LTR switching ----------
-function applyDirectionForLanguage(code) {
-  const isArabic = code.startsWith("ar");
-  const dir = isArabic ? "rtl" : "ltr";
-
-  inputEl.setAttribute("dir", dir);
-  outputEl.setAttribute("dir", dir);
-  changesEl.setAttribute("dir", dir);
-
-  inputEl.setAttribute("lang", isArabic ? "ar" : "en");
-  outputEl.setAttribute("lang", isArabic ? "ar" : "en");
-
-  if (dirHintEl) dirHintEl.textContent = `Direction: ${dir.toUpperCase()}`;
-
-  // feel-good feedback
-  showToast(isArabic ? "تم تفعيل وضع العربية (RTL)" : "English mode (LTR) enabled", "success");
+// ================== LANGUAGE UI SWITCH ==================
+function getUILang() {
+  return langEl.value.startsWith("ar") ? "ar" : "en";
 }
 
-langEl.addEventListener("change", () => {
-  applyDirectionForLanguage(langEl.value);
-});
+function applyUILanguage() {
+  const L = UI_TEXT[getUILang()];
 
-// init direction on load
-applyDirectionForLanguage(langEl.value);
+  inputEl.placeholder = L.pastePlaceholder;
+  checkBtn.textContent = L.checkBtn;
+  copyBtn.textContent = L.copyBtn;
 
-// ---------- LanguageTool API ----------
+  if (outputEl.textContent.startsWith("(")) {
+    outputEl.textContent = L.resultPlaceholder;
+  }
+  if (changesEl.textContent.startsWith("(")) {
+    changesEl.textContent = L.changesPlaceholder;
+  }
+}
+
+// change UI instantly when language changes
+langEl.addEventListener("change", applyUILanguage);
+applyUILanguage();
+
+// ================== API ==================
 async function checkSpelling(text, language) {
   const params = new URLSearchParams();
   params.append("text", text);
@@ -84,11 +90,10 @@ async function checkSpelling(text, language) {
     body: params.toString(),
   });
 
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  if (!res.ok) throw new Error("API error");
   return res.json();
 }
 
-// Apply from end -> start to keep offsets valid
 function applyCorrectionsAndTrack(originalText, matches) {
   const sorted = [...matches].sort((a, b) => b.offset - a.offset);
 
@@ -96,10 +101,9 @@ function applyCorrectionsAndTrack(originalText, matches) {
   const changes = [];
 
   for (const m of sorted) {
-    const before = originalText.slice(m.offset, m.offset + m.length);
-
     if (!m.replacements || m.replacements.length === 0) continue;
 
+    const before = originalText.slice(m.offset, m.offset + m.length);
     const after = m.replacements[0].value;
 
     if (!before || before === after) continue;
@@ -117,11 +121,9 @@ function applyCorrectionsAndTrack(originalText, matches) {
 }
 
 function formatChanges(changes, suggestionsFound) {
+  const L = UI_TEXT[getUILang()];
   if (!changes.length) {
-    if (suggestionsFound > 0) {
-      return "(وجدنا اقتراحات، لكن ما كان فيها استبدال مباشر للكلمات.)";
-    }
-    return "(لا توجد كلمات تم تعديلها)";
+    return suggestionsFound ? L.someSuggestions : L.noChanges;
   }
   return changes.map(c => `${c.before} → ${c.after}`).join("\n");
 }
@@ -131,24 +133,25 @@ function setBusy(b) {
   copyBtn.disabled = b;
 }
 
-// ---------- MAIN ----------
+// ================== MAIN ==================
 checkBtn.addEventListener("click", async () => {
+  const L = UI_TEXT[getUILang()];
   errorEl.textContent = "";
   statusEl.textContent = "";
-  outputEl.textContent = "(Result will appear here)";
-  changesEl.textContent = "(Changes will appear here)";
+
+  outputEl.textContent = L.resultPlaceholder;
+  changesEl.textContent = L.changesPlaceholder;
   changesCountEl.textContent = "";
 
   const text = (inputEl.value || "").trim();
   if (!text) {
-    errorEl.textContent = "الصق التقرير أولاً.";
-    showToast("الصق التقرير أولاً", "error");
+    errorEl.textContent = L.pasteFirst;
     return;
   }
 
   try {
     setBusy(true);
-    statusEl.textContent = "Checking…";
+    statusEl.textContent = L.checking;
 
     const data = await checkSpelling(text, langEl.value);
     const matches = data.matches || [];
@@ -159,33 +162,25 @@ checkBtn.addEventListener("click", async () => {
     changesEl.textContent = formatChanges(changes, matches.length);
     changesCountEl.textContent = changes.length ? `(${changes.length})` : "";
 
-    statusEl.textContent = "Done ✅";
-
-    // Banner after finish
-    const isArabic = langEl.value.startsWith("ar");
-    showToast(isArabic ? "✅ تم الانتهاء من التدقيق الإملائي" : "✅ Spell check finished", "success");
+    statusEl.textContent = L.done;
   } catch (e) {
     console.error(e);
-    errorEl.textContent = "API blocked or rate-limited.";
-    statusEl.textContent = "";
-    showToast("⚠️ تعذّر التدقيق (API محجوب أو تم تجاوز الحد)", "error");
+    errorEl.textContent = L.apiError;
   } finally {
     setBusy(false);
   }
 });
 
-// ---------- COPY ----------
+// ================== COPY ==================
 copyBtn.addEventListener("click", async () => {
   const text = outputEl.textContent || "";
   if (!text || text.startsWith("(")) return;
 
   try {
     await navigator.clipboard.writeText(text);
-    statusEl.textContent = "Copied ✅";
-    showToast("📋 تم النسخ", "success");
+    statusEl.textContent = UI_TEXT[getUILang()].done;
     setTimeout(() => (statusEl.textContent = ""), 1200);
   } catch {
-    errorEl.textContent = "Copy blocked by browser.";
-    showToast("⚠️ المتصفح منع النسخ", "error");
+    errorEl.textContent = UI_TEXT[getUILang()].apiError;
   }
 });
