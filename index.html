@@ -176,42 +176,44 @@
     .error{ color:var(--danger); font-weight:1000; font-size:13px; }
     .hint{ color:var(--muted); font-size:12px; font-weight:800; }
 
-    /* ===== TOAST / BANNER ===== */
+    /* ========= TOAST / BANNER ========= */
     .toast{
       position: fixed;
       top: 16px;
-      right: 16px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-10px);
       z-index: 9999;
-      min-width: 240px;
-      max-width: 420px;
       padding: 12px 14px;
-      border-radius: 14px;
+      border-radius: 999px;
       border: 1px solid var(--line);
-      background: color-mix(in oklab, var(--card) 70%, rgba(0,0,0,.25));
+      background: color-mix(in oklab, var(--card) 75%, rgba(0,0,0,.35));
       box-shadow: var(--shadow);
       backdrop-filter: blur(10px);
-      display:none;
-      align-items:center;
-      gap:10px;
-      font-weight: 900;
+      color: var(--text);
+      font-weight: 1000;
       letter-spacing: .2px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s ease, transform .18s ease;
     }
-    .toast.show{ display:flex; animation: pop .18s ease-out; }
-    @keyframes pop { from{ transform: translateY(-6px); opacity:.5 } to{ transform: translateY(0); opacity:1 } }
-    .toast .small{ font-weight:800; color:var(--muted); font-size:12px; margin-top:2px; }
+    .toast.show{
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
     .toast.success{ border-color: color-mix(in oklab, var(--accent2) 45%, var(--line)); }
     .toast.error{ border-color: color-mix(in oklab, var(--danger) 45%, var(--line)); }
+    .toast .emoji{ font-size: 16px; }
   </style>
 </head>
 
 <body>
-  <!-- Toast -->
-  <div id="toast" class="toast" role="status" aria-live="polite">
-    <div id="toastIcon" style="font-size:18px;">✅</div>
-    <div>
-      <div id="toastTitle">Done</div>
-      <div id="toastMsg" class="small"></div>
-    </div>
+  <!-- Toast banner -->
+  <div id="toast" class="toast" aria-live="polite">
+    <span class="emoji" id="toastEmoji">✅</span>
+    <span id="toastText">تم</span>
   </div>
 
   <div class="wrap">
@@ -230,7 +232,7 @@
           <select id="lang">
             <option value="en-US" selected>English (US)</option>
             <option value="en-GB">English (UK)</option>
-            <option value="ar">Arabic</option>
+            <option value="ar">Arabic (RTL)</option>
           </select>
         </div>
 
@@ -253,8 +255,8 @@
     </div>
 
     <div class="hero">
-      <h2>تقارير جاهزة… بضغطة واحدة.</h2>
-      <p>الصق التقرير، نفّذ التدقيق الإملائي، وخذ نسخة مصححة + قائمة بالكلمات التي تغيرت فقط.</p>
+      <h2>تقارير جاهزة للمشغل… بضغطة.</h2>
+      <p>الصق التقرير، سوِ تدقيق، وخذ نسخة مصححة + قائمة بالكلمات/العبارات اللي تغيرت فقط.</p>
     </div>
 
     <div class="grid">
@@ -262,7 +264,7 @@
         <div class="cardHeader">
           <div>
             <div class="title">📝 Paste Report</div>
-            <div class="sub">Keep timestamps + locations as-is.</div>
+            <div class="sub" id="dirHint">Direction: LTR</div>
           </div>
         </div>
         <div class="cardBody">
