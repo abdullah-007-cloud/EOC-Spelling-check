@@ -185,7 +185,7 @@
         <div class="logo" aria-hidden="true"><span style="font-size:18px;">🛡️</span></div>
         <div>
           <h1>AMAALA EOC</h1>
-          <p>Spell Check • Detected Companies • Timeline QA</p>
+          <p>One-click QA • Companies • Chronology • Spell Check</p>
         </div>
       </div>
 
@@ -209,8 +209,7 @@
           </select>
         </div>
 
-        <button id="checkBtn" class="btn primary" type="button">✅ Check Spelling</button>
-        <button id="fixChronBtn" class="btn" type="button">🕒 Fix Chronology</button>
+        <button id="runBtn" class="btn primary" type="button">🚀 Run QA</button>
         <button id="copyBtn" class="btn" type="button">📋 Copy Result</button>
 
         <span id="status" class="status"></span>
@@ -219,20 +218,19 @@
     </div>
 
     <div class="hero">
-      <h2>Chronology check (timestamps) + spelling in one place.</h2>
+      <h2>Paste report → Run QA → Done.</h2>
       <p>
-        The site will flag out-of-order timestamps and can auto-sort timestamped lines.
-        Midnight rollover supported (e.g., 2359hrs → 0005hrs).
+        Detects company names like <b>Al Harbi Co.,</b>, protects them from wrong replacements (ICAD → iPad),
+        fixes chronology issues (like 1330 before 1323), then runs spell check.
       </p>
     </div>
 
     <div class="grid">
-      <!-- Input + lists -->
       <div class="card">
         <div class="cardHeader">
           <div>
             <div class="title">📝 Paste Report</div>
-            <div class="sub">Companies detected from: “NAME CO…”</div>
+            <div class="sub">Companies detected from: “NAME Co / CO …”</div>
           </div>
         </div>
 
@@ -248,13 +246,12 @@
         </div>
       </div>
 
-      <!-- Outputs -->
       <div style="display:flex; flex-direction:column; gap:14px;">
         <div class="card">
           <div class="cardHeader">
             <div>
-              <div class="title">✨ Adjusted Report</div>
-              <div class="sub">Copy-ready output.</div>
+              <div class="title">✨ Final Output</div>
+              <div class="sub">Chronology-fixed + spell-checked.</div>
             </div>
           </div>
           <div class="cardBody">
