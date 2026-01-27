@@ -5,12 +5,16 @@ const copyBtn = document.getElementById("copyBtn");
 const statusEl = document.getElementById("status");
 const errorEl = document.getElementById("error");
 const langEl = document.getElementById("lang");
+
 const changesEl = document.getElementById("changes");
 const changesCountEl = document.getElementById("changesCount");
+
 const themeSelect = document.getElementById("themeSelect");
 
 const protectedEl = document.getElementById("protectedTerms");
-const chipsEl = document.getElementById("chips");
+const protectedChipsEl = document.getElementById("protectedChips");
+
+const detectedCompaniesChipsEl = document.getElementById("detectedCompaniesChips");
 
 // ---------- THEMES ----------
 function setTheme(theme) {
@@ -33,22 +37,14 @@ function parseProtectedTerms() {
     .map(s => s.trim())
     .filter(Boolean);
 
-  // unique
   return Array.from(new Set(lines));
 }
 
-function renderChips(terms) {
-  chipsEl.innerHTML = "";
-  terms.forEach(t => {
-    const span = document.createElement("span");
-    span.className = "chip";
-    span.textContent = t;
-    chipsEl.appendChild(span);
-  });
-}
-
-function saveProtectedTerms(terms) {
-  localStorage.setItem("amaalaProtectedTerms", JSON.stringify(terms));
+function setProtectedTerms(terms) {
+  const unique = Array.from(new Set(terms));
+  protectedEl.value = unique.join("\n");
+  renderChips(protectedChipsEl, unique);
+  localStorage.setItem("amaalaProtectedTerms", JSON.stringify(unique));
 }
 
 function loadProtectedTerms() {
@@ -56,23 +52,64 @@ function loadProtectedTerms() {
     const saved = JSON.parse(localStorage.getItem("amaalaProtectedTerms") || "null");
     if (Array.isArray(saved) && saved.length) {
       protectedEl.value = saved.join("\n");
-      renderChips(saved);
+      renderChips(protectedChipsEl, saved);
       return;
     }
   } catch {}
-  // defaults
   const defaults = ["ICAD", "TBCV", "AMAALA", "RSSSC"];
-  protectedEl.value = defaults.join("\n");
-  renderChips(defaults);
+  setProtectedTerms(defaults);
 }
 
 protectedEl.addEventListener("input", () => {
   const terms = parseProtectedTerms();
-  renderChips(terms);
-  saveProtectedTerms(terms);
+  renderChips(protectedChipsEl, terms);
+  localStorage.setItem("amaalaProtectedTerms", JSON.stringify(terms));
 });
 
+function renderChips(container, items) {
+  container.innerHTML = "";
+  items.forEach(t => {
+    const span = document.createElement("span");
+    span.className = "chip";
+    span.textContent = t;
+    container.appendChild(span);
+  });
+}
+
 loadProtectedTerms();
+
+// ---------- Detect Companies: WORD before "CO.,"
+// Example: "RSS CO.," => detect "RSS"
+function detectCompanies(text) {
+  const companies = new Set();
+
+  // capture the word right before "CO.,"
+  // supports: RSS CO.,  MASAH CO.,  ABC123 CO.,
+  const regex = /\b([A-Za-z0-9&.-]+)\s+CO\.,/gi;
+
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    companies.add(match[1]);
+  }
+
+  return Array.from(companies);
+}
+
+function updateDetectedCompaniesUI() {
+  const text = inputEl.value || "";
+  const detected = detectCompanies(text);
+
+  renderChips(detectedCompaniesChipsEl, detected);
+
+  // Auto-add detected companies to Protected Terms (so they never get changed)
+  const currentProtected = parseProtectedTerms();
+  const merged = Array.from(new Set([...currentProtected, ...detected]));
+  setProtectedTerms(merged);
+}
+
+// detect as user types
+inputEl.addEventListener("input", updateDetectedCompaniesUI);
+updateDetectedCompaniesUI();
 
 // ---------- LanguageTool API ----------
 async function checkSpelling(text, language) {
@@ -90,8 +127,6 @@ async function checkSpelling(text, language) {
   return res.json();
 }
 
-// Apply from end -> start so offsets stay valid.
-// Skip any match that touches protected terms (exact matches).
 function applyCorrectionsAndTrack(originalText, matches, protectedTerms) {
   const sorted = [...matches].sort((a, b) => b.offset - a.offset);
 
@@ -106,11 +141,8 @@ function applyCorrectionsAndTrack(originalText, matches, protectedTerms) {
     const before = originalText.slice(m.offset, m.offset + m.length);
     const after = m.replacements[0].value;
 
-    // If this exact token is protected, do not change it
+    // Don't change protected terms (exact match)
     if (protectedSet.has(before)) continue;
-
-    // Also: if replacement would change a protected term (e.g., ICAD -> iPad), block it
-    if (protectedSet.has(after)) continue;
 
     if (!before || before === after) continue;
 
@@ -157,6 +189,9 @@ checkBtn.addEventListener("click", async () => {
   try {
     setBusy(true);
     statusEl.textContent = "Checking…";
+
+    // make sure companies are detected before checking
+    updateDetectedCompaniesUI();
 
     const data = await checkSpelling(text, langEl.value);
     const matches = data.matches || [];
