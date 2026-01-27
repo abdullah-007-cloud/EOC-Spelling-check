@@ -55,7 +55,6 @@
 
     .wrap{ max-width:1180px; margin:0 auto; padding: 18px 18px 70px; }
 
-    /* Top nav */
     .nav{
       position: sticky;
       top: 0;
@@ -159,7 +158,6 @@
     .status{ color:var(--muted); font-size:13px; font-weight:900; }
     .error{ color:var(--danger); font-weight:1000; font-size:13px; }
 
-    /* Header hero */
     .hero{
       margin: 12px 0 18px;
       padding:18px 18px;
@@ -186,7 +184,6 @@
       white-space:nowrap;
     }
 
-    /* Layout */
     .grid{ display:grid; grid-template-columns: 1.25fr .85fr; gap:14px; }
     @media (max-width: 980px){ .grid{ grid-template-columns:1fr; } }
 
@@ -196,6 +193,7 @@
       background: var(--card);
       box-shadow: var(--shadow);
       overflow:hidden;
+      transition: box-shadow .2s ease, border-color .2s ease;
     }
     .cardHeader{
       padding: 14px 16px;
@@ -264,6 +262,21 @@
       text-align:center;
       opacity:.9;
     }
+
+    /* ===== Timeline Alert (RED) ===== */
+    .card.alert {
+      border-color: var(--danger) !important;
+      box-shadow:
+        0 0 0 2px color-mix(in oklab, var(--danger) 45%, transparent),
+        0 18px 50px rgba(255, 77, 109, .35);
+    }
+    .card.alert .cardHeader {
+      background: linear-gradient(
+        180deg,
+        color-mix(in oklab, var(--danger) 25%, transparent),
+        transparent
+      );
+    }
   </style>
 </head>
 
@@ -273,7 +286,7 @@
       <div class="topbar">
         <div class="brand">
           <div class="logoBox" title="EOC Logo">
-            <!-- Put your provided image in repo root as: logo.png -->
+            <!-- Put your image in repo root as: logo.png -->
             <img src="logo.png" alt="EOC Logo" />
           </div>
           <div class="brandTitle">
@@ -302,7 +315,6 @@
             </select>
           </div>
 
-          <!-- ONE BUTTON ONLY -->
           <button id="runBtn" class="btn primary" type="button">✅ Check Report</button>
           <button id="copyBtn" class="btn" type="button">📋 Copy Result</button>
 
@@ -316,15 +328,14 @@
       <div>
         <h2>One click. Clean report. No surprises.</h2>
         <p>
-          It will detect company names like <b>Al Harbi Co.,</b> (without grabbing junk like “call from…”),
-          protect those terms, validate timestamps (e.g. flags <b>13330hrs</b>), fix out-of-order lines, then run spell check.
+          Detects company names like <b>Al Harbi Co.,</b> (without grabbing junk like “call from…”),
+          protects those terms, validates timestamps (e.g. flags <b>13330hrs</b>), fixes out-of-order lines, then runs spell check.
         </p>
       </div>
       <div class="badge">Fast • Simple • Operator-friendly</div>
     </div>
 
     <div class="grid">
-      <!-- LEFT: Input -->
       <div class="card">
         <div class="cardHeader">
           <div>
@@ -345,7 +356,6 @@
         </div>
       </div>
 
-      <!-- RIGHT: Outputs -->
       <div class="rightCol">
         <div class="card">
           <div class="cardHeader">
@@ -371,7 +381,8 @@
           </div>
         </div>
 
-        <div class="card">
+        <!-- TIMELINE CARD (will turn RED if critical timestamp error exists) -->
+        <div class="card" id="timelineCard">
           <div class="cardHeader">
             <div>
               <div class="title">🧭 Timeline Analysis</div>
