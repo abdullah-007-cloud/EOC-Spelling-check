@@ -7,8 +7,8 @@
 
   <style>
     :root{
-      --bg1:#0b1220; --bg2:#0a2a2f;
-      --card: rgba(255,255,255,.08); --card2: rgba(255,255,255,.06);
+      --bg1:#070b16; --bg2:#062a2d;
+      --card: rgba(255,255,255,.09); --card2: rgba(255,255,255,.06);
       --text:#eaf2ff; --muted: rgba(234,242,255,.72);
       --line: rgba(255,255,255,.14);
       --accent:#7cf7ff; --accent2:#b6ff7c; --danger:#ff4d6d;
@@ -17,16 +17,16 @@
       --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     }
     html[data-theme="light"]{
-      --bg1:#f5f7ff; --bg2:#eefdf8;
-      --card: rgba(255,255,255,.82); --card2: rgba(255,255,255,.60);
+      --bg1:#f7f9ff; --bg2:#eefdf8;
+      --card: rgba(255,255,255,.86); --card2: rgba(255,255,255,.62);
       --text:#0d1b2a; --muted: rgba(13,27,42,.72);
       --line: rgba(13,27,42,.12);
       --accent:#0ea5e9; --accent2:#22c55e; --danger:#d90429;
       --shadow: 0 18px 60px rgba(16,24,40,.12);
     }
     html[data-theme="midnight"]{
-      --bg1:#050816; --bg2:#0b1029;
-      --card: rgba(255,255,255,.07); --card2: rgba(255,255,255,.05);
+      --bg1:#040615; --bg2:#0b1029;
+      --card: rgba(255,255,255,.08); --card2: rgba(255,255,255,.05);
       --text:#eef4ff; --muted: rgba(238,244,255,.70);
       --line: rgba(255,255,255,.13);
       --accent:#a78bfa; --accent2:#60a5fa; --danger:#fb7185;
@@ -34,7 +34,7 @@
     }
     html[data-theme="sand"]{
       --bg1:#fff7ed; --bg2:#fef3c7;
-      --card: rgba(255,255,255,.82); --card2: rgba(255,255,255,.60);
+      --card: rgba(255,255,255,.86); --card2: rgba(255,255,255,.62);
       --text:#1f2937; --muted: rgba(31,41,55,.72);
       --line: rgba(31,41,55,.14);
       --accent:#f59e0b; --accent2:#10b981; --danger:#ef4444;
@@ -47,75 +47,151 @@
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
       color:var(--text);
       background:
-        radial-gradient(1200px 700px at 20% 0%, color-mix(in oklab, var(--accent) 25%, transparent), transparent 60%),
-        radial-gradient(900px 600px at 90% 20%, color-mix(in oklab, var(--accent2) 20%, transparent), transparent 55%),
+        radial-gradient(1200px 700px at 18% 0%, color-mix(in oklab, var(--accent) 24%, transparent), transparent 60%),
+        radial-gradient(900px 600px at 92% 20%, color-mix(in oklab, var(--accent2) 18%, transparent), transparent 55%),
         linear-gradient(160deg, var(--bg1), var(--bg2));
       min-height:100vh;
     }
 
-    .wrap{ max-width:1100px; margin:0 auto; padding: 26px 18px 70px; }
-    .topbar{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
-    .brand{ display:flex; align-items:center; gap:12px; }
-    .logo{
-      width:44px; height:44px; border-radius:14px;
-      background:
-        radial-gradient(circle at 30% 30%, color-mix(in oklab, var(--accent) 75%, transparent), transparent 55%),
-        radial-gradient(circle at 70% 70%, color-mix(in oklab, var(--accent2) 65%, transparent), transparent 55%),
-        linear-gradient(135deg, rgba(255,255,255,.18), rgba(255,255,255,.06));
-      border:1px solid var(--line);
-      box-shadow: var(--shadow);
-      display:grid; place-items:center;
+    .wrap{ max-width:1180px; margin:0 auto; padding: 18px 18px 70px; }
+
+    /* Top nav */
+    .nav{
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      padding: 12px 0;
+      background: linear-gradient(180deg, rgba(0,0,0,.35), transparent);
+      backdrop-filter: blur(10px);
     }
-    .brand h1{ font-size:18px; margin:0; }
-    .brand p{ margin:2px 0 0; font-size:13px; color:var(--muted); }
-    .actions{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+    html[data-theme="light"] .nav{ background: linear-gradient(180deg, rgba(255,255,255,.55), transparent); }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      min-width: 240px;
+    }
+
+    .logoBox{
+      width:54px; height:54px;
+      border-radius:16px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      box-shadow: var(--shadow);
+      display:grid;
+      place-items:center;
+      overflow:hidden;
+    }
+    .logoBox img{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      padding:6px;
+      filter: drop-shadow(0 10px 18px rgba(0,0,0,.25));
+    }
+
+    .brandTitle{
+      display:flex;
+      flex-direction:column;
+      line-height:1.1;
+    }
+    .brandTitle h1{ margin:0; font-size:18px; font-weight:1000; letter-spacing:.2px; }
+    .brandTitle p{ margin:4px 0 0; font-size:13px; color:var(--muted); font-weight:800; }
+
+    .actions{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
 
     .pill{
       display:flex; align-items:center; gap:8px;
-      padding:10px 12px; border-radius:999px;
+      padding:10px 12px;
+      border-radius:999px;
       border:1px solid var(--line);
       background: var(--card2);
       backdrop-filter: blur(10px);
     }
+    .pill span{ font-size:12px; color:var(--muted); font-weight:900; }
+
     select{
       border:none; outline:none; background:transparent;
-      color:var(--text); font-weight:800; font-size:13px; cursor:pointer;
+      color:var(--text);
+      font-weight:1000;
+      font-size:13px;
+      cursor:pointer;
     }
+
     .btn{
       border:1px solid var(--line);
       background: var(--card);
       color:var(--text);
-      padding:10px 14px;
-      border-radius:12px;
+      padding:11px 14px;
+      border-radius:14px;
       cursor:pointer;
-      font-weight:900;
+      font-weight:1000;
       display:flex; align-items:center; gap:8px;
       box-shadow: 0 12px 28px rgba(0,0,0,.12);
+      transition: transform .08s ease, opacity .2s ease;
+      user-select:none;
     }
+    .btn:hover{ transform: translateY(-1px); }
+    .btn:active{ transform: translateY(0px) scale(.99); }
     .btn.primary{
-      border-color: color-mix(in oklab, var(--accent) 35%, var(--line));
+      border-color: color-mix(in oklab, var(--accent) 38%, var(--line));
       background:
-        radial-gradient(140px 80px at 20% 20%, color-mix(in oklab, var(--accent) 35%, transparent), transparent 60%),
-        linear-gradient(135deg, color-mix(in oklab, var(--accent) 14%, transparent), rgba(255,255,255,.06));
+        radial-gradient(160px 90px at 18% 20%, color-mix(in oklab, var(--accent) 38%, transparent), transparent 60%),
+        linear-gradient(135deg, color-mix(in oklab, var(--accent) 16%, transparent), rgba(255,255,255,.06));
     }
-    .btn:disabled{ opacity:.55; cursor:not-allowed; }
+    .btn:disabled{ opacity:.55; cursor:not-allowed; transform:none; }
 
+    .status{ color:var(--muted); font-size:13px; font-weight:900; }
+    .error{ color:var(--danger); font-weight:1000; font-size:13px; }
+
+    /* Header hero */
     .hero{
-      margin: 14px 0 18px;
-      padding:18px;
-      border-radius: var(--radius);
+      margin: 12px 0 18px;
+      padding:18px 18px;
+      border-radius: 22px;
       border:1px solid var(--line);
       background: linear-gradient(135deg, rgba(255,255,255,.10), rgba(255,255,255,.05));
       box-shadow: var(--shadow);
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
     }
-    .hero h2{ margin:0 0 8px; font-size:22px; }
-    .hero p{ margin:0; color:var(--muted); line-height:1.5; font-size:14px; }
+    .hero h2{ margin:0 0 8px; font-size:22px; font-weight:1100; }
+    .hero p{ margin:0; color:var(--muted); line-height:1.55; font-size:14px; font-weight:800; max-width:820px; }
+    .hero .badge{
+      padding:8px 10px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      background: rgba(255,255,255,.06);
+      font-weight:1000;
+      font-size:12px;
+      color: var(--text);
+      white-space:nowrap;
+    }
 
-    .grid{ display:grid; grid-template-columns: 1.25fr .75fr; gap:14px; }
+    /* Layout */
+    .grid{ display:grid; grid-template-columns: 1.25fr .85fr; gap:14px; }
     @media (max-width: 980px){ .grid{ grid-template-columns:1fr; } }
 
     .card{
-      border-radius: var(--radius);
+      border-radius: 22px;
       border:1px solid var(--line);
       background: var(--card);
       box-shadow: var(--shadow);
@@ -127,131 +203,155 @@
       border-bottom:1px solid var(--line);
       background: linear-gradient(180deg, rgba(255,255,255,.07), transparent);
     }
-    .title{ font-weight:1000; display:flex; gap:10px; align-items:center; }
-    .sub{ color:var(--muted); font-size:12px; font-weight:800; }
+    .title{ font-weight:1100; display:flex; gap:10px; align-items:center; }
+    .sub{ color:var(--muted); font-size:12px; font-weight:900; }
     .cardBody{ padding:14px 16px 16px; }
 
     textarea{
       width:100%;
-      min-height: 220px;
-      border-radius: 14px;
+      min-height: 240px;
+      border-radius: 16px;
       border:1px solid var(--line);
       background: rgba(0,0,0,.10);
       color: var(--text);
       padding: 14px;
       font-size: 14px;
-      line-height: 1.55;
+      line-height: 1.6;
       outline:none;
       resize: vertical;
+      transition: box-shadow .2s ease, border-color .2s ease;
     }
-    html[data-theme="light"] textarea{ background: rgba(255,255,255,.55); }
+    textarea:focus{
+      border-color: color-mix(in oklab, var(--accent) 40%, var(--line));
+      box-shadow: 0 0 0 5px color-mix(in oklab, var(--accent) 18%, transparent);
+    }
+    html[data-theme="light"] textarea{ background: rgba(255,255,255,.62); }
 
     pre{
       margin:0;
-      border-radius: 14px;
+      border-radius: 16px;
       border:1px solid var(--line);
       background: rgba(0,0,0,.10);
       padding: 14px;
       font-family: var(--mono);
       font-size: 13px;
-      line-height: 1.55;
+      line-height: 1.6;
       white-space: pre-wrap;
       word-wrap: break-word;
       min-height: 120px;
     }
-    html[data-theme="light"] pre{ background: rgba(255,255,255,.55); }
+    html[data-theme="light"] pre{ background: rgba(255,255,255,.62); }
 
-    .status{ color:var(--muted); font-size:13px; font-weight:800; }
-    .error{ color:var(--danger); font-weight:1000; font-size:13px; }
-    .hint{ color:var(--muted); font-size:12px; font-weight:800; }
-    .mini{ font-size:12px; color:var(--muted); line-height:1.6; margin-top:10px; }
+    .mini{ font-size:12px; color:var(--muted); line-height:1.6; margin-top:10px; font-weight:900; }
 
     .chipRow{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
     .chip{
-      padding:6px 10px;
+      padding:7px 11px;
       border-radius:999px;
       border:1px solid var(--line);
       background: rgba(255,255,255,.06);
-      font-weight:900;
+      font-weight:1000;
       font-size:12px;
+    }
+
+    .rightCol{ display:flex; flex-direction:column; gap:14px; }
+
+    .footer{
+      margin-top: 18px;
+      color: var(--muted);
+      font-size:12px;
+      font-weight:800;
+      text-align:center;
+      opacity:.9;
     }
   </style>
 </head>
 
 <body>
   <div class="wrap">
-    <div class="topbar">
-      <div class="brand">
-        <div class="logo" aria-hidden="true"><span style="font-size:18px;">🛡️</span></div>
-        <div>
-          <h1>AMAALA EOC</h1>
-          <p>One-click QA • Companies • Chronology • Spell Check</p>
-        </div>
-      </div>
-
-      <div class="actions">
-        <div class="pill">
-          <span class="hint">Language</span>
-          <select id="lang">
-            <option value="en-US" selected>English (US)</option>
-            <option value="en-GB">English (UK)</option>
-            <option value="ar">Arabic (Beta)</option>
-          </select>
+    <div class="nav">
+      <div class="topbar">
+        <div class="brand">
+          <div class="logoBox" title="EOC Logo">
+            <!-- Put your provided image in repo root as: logo.png -->
+            <img src="logo.png" alt="EOC Logo" />
+          </div>
+          <div class="brandTitle">
+            <h1>AMAALA EOC</h1>
+            <p>Report QA • Spell Check • Company Detection • Timeline Validation</p>
+          </div>
         </div>
 
-        <div class="pill">
-          <span class="hint">Theme</span>
-          <select id="themeSelect">
-            <option value="dark" selected>Dark</option>
-            <option value="light">Light</option>
-            <option value="midnight">Midnight</option>
-            <option value="sand">Sand</option>
-          </select>
+        <div class="actions">
+          <div class="pill">
+            <span>Language</span>
+            <select id="lang">
+              <option value="en-US" selected>English (US)</option>
+              <option value="en-GB">English (UK)</option>
+              <option value="ar">Arabic (Beta)</option>
+            </select>
+          </div>
+
+          <div class="pill">
+            <span>Theme</span>
+            <select id="themeSelect">
+              <option value="dark" selected>Dark</option>
+              <option value="light">Light</option>
+              <option value="midnight">Midnight</option>
+              <option value="sand">Sand</option>
+            </select>
+          </div>
+
+          <!-- ONE BUTTON ONLY -->
+          <button id="runBtn" class="btn primary" type="button">✅ Check Report</button>
+          <button id="copyBtn" class="btn" type="button">📋 Copy Result</button>
+
+          <span id="status" class="status"></span>
+          <span id="error" class="error"></span>
         </div>
-
-        <button id="runBtn" class="btn primary" type="button">🚀 Run QA</button>
-        <button id="copyBtn" class="btn" type="button">📋 Copy Result</button>
-
-        <span id="status" class="status"></span>
-        <span id="error" class="error"></span>
       </div>
     </div>
 
     <div class="hero">
-      <h2>Paste report → Run QA → Done.</h2>
-      <p>
-        Detects company names like <b>Al Harbi Co.,</b>, protects them from wrong replacements (ICAD → iPad),
-        fixes chronology issues (like 1330 before 1323), then runs spell check.
-      </p>
+      <div>
+        <h2>One click. Clean report. No surprises.</h2>
+        <p>
+          It will detect company names like <b>Al Harbi Co.,</b> (without grabbing junk like “call from…”),
+          protect those terms, validate timestamps (e.g. flags <b>13330hrs</b>), fix out-of-order lines, then run spell check.
+        </p>
+      </div>
+      <div class="badge">Fast • Simple • Operator-friendly</div>
     </div>
 
     <div class="grid">
+      <!-- LEFT: Input -->
       <div class="card">
         <div class="cardHeader">
           <div>
             <div class="title">📝 Paste Report</div>
-            <div class="sub">Companies detected from: “NAME Co / CO …”</div>
+            <div class="sub">Tip: use “####hrs.” at start of each event line.</div>
           </div>
         </div>
 
         <div class="cardBody">
           <textarea id="input" placeholder="Paste EOC report here..."></textarea>
 
-          <div class="mini"><b>Detected Companies</b></div>
+          <div class="mini">Detected Companies</div>
           <div class="chipRow" id="detectedCompaniesChips"></div>
 
-          <div class="mini"><b>Protected Terms (won’t be changed)</b> — one per line</div>
-          <textarea id="protectedTerms" placeholder="ICAD&#10;TBCV&#10;AMAALA" style="min-height:110px;"></textarea>
+          <div class="mini">Protected Terms (won’t be changed) — one per line</div>
+          <textarea id="protectedTerms" placeholder="ICAD&#10;TBCV&#10;AMAALA" style="min-height:120px;"></textarea>
           <div class="chipRow" id="protectedChips"></div>
         </div>
       </div>
 
-      <div style="display:flex; flex-direction:column; gap:14px;">
+      <!-- RIGHT: Outputs -->
+      <div class="rightCol">
         <div class="card">
           <div class="cardHeader">
             <div>
               <div class="title">✨ Final Output</div>
-              <div class="sub">Chronology-fixed + spell-checked.</div>
+              <div class="sub">Copy-ready, chronology-fixed, spell-checked.</div>
             </div>
           </div>
           <div class="cardBody">
@@ -275,7 +375,7 @@
           <div class="cardHeader">
             <div>
               <div class="title">🧭 Timeline Analysis</div>
-              <div class="sub">Flags chronology issues.</div>
+              <div class="sub">Flags invalid/out-of-order timestamps.</div>
             </div>
           </div>
           <div class="cardBody">
@@ -284,6 +384,8 @@
         </div>
       </div>
     </div>
+
+    <div class="footer">AMAALA EOC • Internal Tool (Local Browser) • v1</div>
   </div>
 
   <script src="app.js"></script>
