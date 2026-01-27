@@ -1,6 +1,7 @@
+// ===== Elements =====
 const inputEl = document.getElementById("input");
 const outputEl = document.getElementById("output");
-const runBtn = document.getElementById("runBtn");
+const runBtn = document.getElementById("runBtn");      // button in HTML
 const copyBtn = document.getElementById("copyBtn");
 const statusEl = document.getElementById("status");
 const errorEl = document.getElementById("error");
@@ -16,7 +17,7 @@ const protectedEl = document.getElementById("protectedTerms");
 const protectedChipsEl = document.getElementById("protectedChips");
 const detectedCompaniesChipsEl = document.getElementById("detectedCompaniesChips");
 
-// ---------- THEMES ----------
+// ===== Themes =====
 function setTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme);
   localStorage.setItem("amaalaTheme", theme);
@@ -29,7 +30,7 @@ function loadTheme() {
 themeSelect?.addEventListener("change", () => setTheme(themeSelect.value));
 loadTheme();
 
-// ---------- CHIPS + PROTECTED ----------
+// ===== Chips + Protected Terms =====
 function renderChips(container, items) {
   container.innerHTML = "";
   items.forEach(t => {
@@ -74,27 +75,70 @@ protectedEl.addEventListener("input", () => {
 
 loadProtectedTerms();
 
-// ---------- DETECT COMPANIES (keeps "Al Harbi") ----------
-// Captures up to 4 words before Co/CO and preserves small prefixes like "Al"
+// ===== Smarter Company Detection =====
+// Goal: detect "Al Harbi Co.,", "Red Sea Co.", etc — NOT "call from Al Harbi Co."
+// Strategy:
+// 1) Grab up to 6 words before Co/CO.
+// 2) Clean it:
+//    - if phrase contains " from ", keep only what comes AFTER the last "from"
+//    - remove leading junk words like "call", "received", "phone", "reporting", etc.
+//    - keep final cleaned name if it looks like a name (>=2 chars, has letters)
+function cleanCompanyName(raw) {
+  let s = (raw || "").trim();
+
+  // normalize whitespace
+  s = s.replace(/\s+/g, " ");
+
+  // if it contains " from ", keep only after the last "from"
+  const lower = s.toLowerCase();
+  const idx = lower.lastIndexOf(" from ");
+  if (idx !== -1) {
+    s = s.slice(idx + " from ".length).trim();
+  }
+
+  // remove common leading junk words
+  // (we only strip from the start)
+  const junkStarts = [
+    "a", "an", "the",
+    "call", "phone", "telephone", "radio",
+    "received", "receive", "receiving",
+    "report", "reported", "reporting",
+    "message", "sms",
+    "from" // just in case
+  ];
+
+  // strip multiple leading words if they match junk list
+  let parts = s.split(" ");
+  while (parts.length && junkStarts.includes(parts[0].toLowerCase())) {
+    parts.shift();
+  }
+  s = parts.join(" ").trim();
+
+  // remove trailing punctuation/dashes
+  s = s.replace(/[-–—,:;.\s]+$/g, "").trim();
+
+  // sanity checks: must contain a letter
+  if (!/[A-Za-z]/.test(s)) return null;
+
+  // avoid obviously wrong long phrases
+  if (s.toLowerCase().includes("call")) return null;
+
+  // Keep it
+  return s.length >= 2 ? s : null;
+}
+
 function detectCompanies(text) {
   const companies = new Set();
 
-  // Words may include letters/numbers and & . - /
-  // Capture 1–4 words before "Co/CO"
+  // Grab up to 6 tokens before CO/Co (this catches "Al Harbi", "Red Sea", "Four Seasons", etc.)
+  // Tokens allow letters/numbers and & . - /
   const regex =
-    /\b((?:[A-Za-z0-9&.\-\/]+(?:\s+|-\s*)?){1,4})\s+(?:CO|Co)\b\s*[.,;:]?,?/g;
+    /\b((?:[A-Za-z0-9&.\-\/]+\s+){0,5}[A-Za-z0-9&.\-\/]+)\s+(?:CO|Co)\b\s*[.,;:]?,?/g;
 
   let m;
   while ((m = regex.exec(text)) !== null) {
-    let name = (m[1] || "").trim();
-
-    // Clean trailing hyphens/spaces
-    name = name.replace(/[-\s]+$/g, "").trim();
-
-    // Optional: normalize multiple spaces
-    name = name.replace(/\s+/g, " ");
-
-    if (name.length >= 2) companies.add(name);
+    const cleaned = cleanCompanyName(m[1]);
+    if (cleaned) companies.add(cleaned);
   }
 
   return Array.from(companies);
@@ -104,14 +148,14 @@ function updateDetectedCompanies(text) {
   const detected = detectCompanies(text);
   renderChips(detectedCompaniesChipsEl, detected);
 
-  // Auto-add to Protected Terms (prevents wrong replacements)
+  // Auto add to Protected Terms so spell-check won't ruin them
   const merged = Array.from(new Set([...parseProtectedTerms(), ...detected]));
   setProtectedTerms(merged);
 
   return detected;
 }
 
-// ---------- LanguageTool API ----------
+// ===== LanguageTool Spell Check =====
 async function checkSpelling(text, language) {
   const params = new URLSearchParams();
   params.append("text", text);
@@ -133,7 +177,6 @@ function applyCorrectionsAndTrack(originalText, matches, protectedTerms) {
   let updated = originalText;
   const changes = [];
 
-  // Case-insensitive protection
   const protectedLower = new Set(protectedTerms.map(t => t.toLowerCase()));
 
   for (const m of sorted) {
@@ -160,33 +203,59 @@ function applyCorrectionsAndTrack(originalText, matches, protectedTerms) {
 function formatChanges(changes, suggestionsFound) {
   if (!changes.length) {
     return suggestionsFound
-      ? "(Suggestions found, but no direct replacements were applied — or changes were blocked by Protected Terms.)"
+      ? "(Suggestions found, but replacements were blocked (Protected Terms) or not applied.)"
       : "(No adjusted words found)";
   }
   return changes.map(c => `${c.before} → ${c.after}`).join("\n");
 }
 
-// ---------- TIMELINE PARSE + SMART ROLLOVER ----------
+// ===== Timeline Parsing + Validation =====
+function parseTimeToken(tokenDigits) {
+  // tokenDigits is 3 or 4 digits string
+  let hh, mm;
+  if (tokenDigits.length === 3) {
+    hh = parseInt(tokenDigits.slice(0, 1), 10);
+    mm = parseInt(tokenDigits.slice(1), 10);
+  } else {
+    hh = parseInt(tokenDigits.slice(0, 2), 10);
+    mm = parseInt(tokenDigits.slice(2), 10);
+  }
+  if (Number.isNaN(hh) || Number.isNaN(mm)) return null;
+  if (hh < 0 || hh > 23 || mm < 0 || mm > 59) return null;
+  return { hh, mm, minutes: hh * 60 + mm };
+}
+
+function findInvalidTimestamps(text) {
+  // Find ANY "<digits>hrs" and validate:
+  // valid must be 3 or 4 digits AND HH/MM range ok.
+  const invalids = [];
+  const re = /\b(\d{1,6})\s*hrs\b/gi;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    const digits = m[1];
+    const full = m[0];
+
+    if (!(digits.length === 3 || digits.length === 4)) {
+      invalids.push(`Invalid timestamp format: "${full}" (must be 3–4 digits like 925hrs or 1322hrs)`);
+      continue;
+    }
+    const parsed = parseTimeToken(digits);
+    if (!parsed) {
+      invalids.push(`Invalid timestamp value: "${full}" (HH must be 00–23 and MM 00–59)`);
+    }
+  }
+  return invalids;
+}
+
 function parseTimeFromLine(line) {
-  // Supports: 1322hrs. / 1322 hrs / 0125hrs / 925hrs
+  // Extract only valid 3–4 digit time tokens from the line.
   const m = line.match(/\b(\d{3,4})\s*hrs\b/i);
   if (!m) return null;
 
-  const raw = m[1];
-  let hh, mm;
+  const parsed = parseTimeToken(m[1]);
+  if (!parsed) return null;
 
-  if (raw.length === 3) {
-    hh = parseInt(raw.slice(0, 1), 10);
-    mm = parseInt(raw.slice(1), 10);
-  } else {
-    hh = parseInt(raw.slice(0, 2), 10);
-    mm = parseInt(raw.slice(2), 10);
-  }
-
-  if (Number.isNaN(hh) || Number.isNaN(mm)) return null;
-  if (hh < 0 || hh > 23 || mm < 0 || mm > 59) return null;
-
-  return { hh, mm, minutes: hh * 60 + mm, token: m[0] };
+  return { ...parsed, token: m[0] };
 }
 
 function splitIntoTimestampBlocks(text) {
@@ -196,7 +265,6 @@ function splitIntoTimestampBlocks(text) {
 
   for (const line of lines) {
     const t = parseTimeFromLine(line);
-
     if (t) {
       if (current) blocks.push(current);
       current = { time: t, lines: [line] };
@@ -209,57 +277,56 @@ function splitIntoTimestampBlocks(text) {
   return blocks;
 }
 
-/**
- * Smart rollover:
- * Only treat as "midnight rollover" if last time is late (>= 20:00) and current is early (<= 06:00)
- * Otherwise it's a real out-of-order error (like your 1330 then 1323)
- */
-function analyzeTimeline(blocks) {
-  const timed = blocks.filter(b => b.time);
-  if (timed.length < 2) return ["No or not enough timestamps to analyze."];
-
+// Smart rollover rule: only when last >= 20:00 and current <= 06:00
+function analyzeTimeline(text) {
   const issues = [];
+
+  // 1) Invalid timestamps anywhere
+  const invalids = findInvalidTimestamps(text);
+  issues.push(...invalids);
+
+  // 2) Out-of-order detection on valid timestamp lines
+  const blocks = splitIntoTimestampBlocks(text);
+  const timed = blocks.filter(b => b.time);
+
+  if (timed.length < 2) {
+    if (issues.length === 0) issues.push("No or not enough valid timestamps to analyze.");
+    return issues;
+  }
+
   let dayOffset = 0;
   let lastAdj = null;
   let lastBase = null;
 
-  for (let i = 0; i < timed.length; i++) {
-    const base = timed[i].time.minutes;
+  for (const b of timed) {
+    const base = b.time.minutes;
     let adj = base + dayOffset;
 
     if (lastAdj !== null && adj < lastAdj) {
-      const lastLate = lastBase >= (20 * 60);   // >= 20:00
-      const curEarly = base <= (6 * 60);        // <= 06:00
+      const lastLate = lastBase >= (20 * 60);
+      const curEarly = base <= (6 * 60);
 
       if (lastLate && curEarly) {
         dayOffset += 1440;
         adj = base + dayOffset;
-        issues.push(`Midnight rollover detected near: "${timed[i].lines[0].trim()}"`);
+        issues.push(`Midnight rollover detected near: "${b.lines[0].trim()}"`);
       } else {
-        issues.push(`Out-of-order timestamp detected: "${timed[i].lines[0].trim()}" (appears after a later time)`);
+        issues.push(`Out-of-order timestamp detected: "${b.lines[0].trim()}"`);
       }
     }
 
     lastAdj = adj;
     lastBase = base;
-    timed[i]._adj = adj;
   }
 
   if (issues.length === 0) issues.push("No chronology issues detected ✅");
   return issues;
 }
 
-function analyzeTimelineToUI(text) {
-  const blocks = splitIntoTimestampBlocks(text);
-  const issues = analyzeTimeline(blocks);
-  timelineEl.textContent = issues.join("\n");
-}
-
-// ---------- FIX CHRONOLOGY (sort timed blocks; keep rollover rule) ----------
 function fixChronology(text) {
   const blocks = splitIntoTimestampBlocks(text);
 
-  // compute adjusted minutes with SMART rollover for sorting
+  // Assign sort keys for timed blocks with smart rollover
   let dayOffset = 0;
   let lastAdj = null;
   let lastBase = null;
@@ -278,7 +345,7 @@ function fixChronology(text) {
         dayOffset += 1440;
         adj = base + dayOffset;
       }
-      // else: it's truly out-of-order, no dayOffset; we still sort by base within same day below
+      // else: true out-of-order; sorting will fix it
     }
 
     b._sortKey = adj;
@@ -286,19 +353,18 @@ function fixChronology(text) {
     lastBase = base;
   }
 
-  // Keep untimed blocks in place at the top (rare)
+  // Untimed blocks (rare) stay on top in original order
   let stable = 0;
   for (const b of blocks) {
     if (b.time) continue;
     b._sortKey = Number.NEGATIVE_INFINITY + stable++;
   }
 
-  // Sort by key
   const sorted = [...blocks].sort((a, b) => (a._sortKey ?? 0) - (b._sortKey ?? 0));
   return sorted.map(b => b.lines.join("\n")).join("\n");
 }
 
-// ---------- ONE BUTTON: RUN QA ----------
+// ===== One button: Check Report =====
 function setBusy(b) {
   runBtn.disabled = b;
   copyBtn.disabled = b;
@@ -320,29 +386,30 @@ runBtn.addEventListener("click", async () => {
 
   try {
     setBusy(true);
-    statusEl.textContent = "Running QA…";
+    statusEl.textContent = "Checking report…";
 
-    // 1) Detect companies + protect them
+    // 1) detect companies + protect
     updateDetectedCompanies(raw);
 
-    // 2) Fix chronology first (so output is in order)
+    // 2) fix chronology first
     const chronoFixed = fixChronology(raw);
 
-    // 3) Analyze chronology (after fix) and show
-    analyzeTimelineToUI(chronoFixed);
+    // 3) timeline analysis (shows invalid timestamps + order issues)
+    timelineEl.textContent = analyzeTimeline(chronoFixed).join("\n");
 
-    // 4) Spell check on chrono-fixed text
+    // 4) spell check on chrono-fixed
     const data = await checkSpelling(chronoFixed, langEl.value);
     const matches = data.matches || [];
     const protectedTerms = parseProtectedTerms();
 
     const { updated, changes } = applyCorrectionsAndTrack(chronoFixed, matches, protectedTerms);
 
-    // 5) Output final + changes + timeline on final too
     outputEl.textContent = updated;
     changesEl.textContent = formatChanges(changes, matches.length);
     changesCountEl.textContent = changes.length ? `(${changes.length})` : "";
-    analyzeTimelineToUI(updated);
+
+    // 5) re-analyze after spelling
+    timelineEl.textContent = analyzeTimeline(updated).join("\n");
 
     statusEl.textContent = "Done ✅";
   } catch (e) {
@@ -354,7 +421,7 @@ runBtn.addEventListener("click", async () => {
   }
 });
 
-// ---------- COPY ----------
+// Copy
 copyBtn.addEventListener("click", async () => {
   const text = outputEl.textContent || "";
   if (!text || text.startsWith("(")) return;
@@ -368,10 +435,10 @@ copyBtn.addEventListener("click", async () => {
   }
 });
 
-// Live: keep companies + timeline visible while typing
+// Live feedback while typing
 inputEl.addEventListener("input", () => {
   updateDetectedCompanies(inputEl.value || "");
-  analyzeTimelineToUI(inputEl.value || "");
+  timelineEl.textContent = analyzeTimeline(inputEl.value || "").join("\n");
 });
 updateDetectedCompanies(inputEl.value || "");
-analyzeTimelineToUI(inputEl.value || "");
+timelineEl.textContent = analyzeTimeline(inputEl.value || "").join("\n");
