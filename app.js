@@ -17,6 +17,9 @@ const protectedEl = document.getElementById("protectedTerms");
 const protectedChipsEl = document.getElementById("protectedChips");
 const detectedCompaniesChipsEl = document.getElementById("detectedCompaniesChips");
 
+// Timeline card (to highlight red)
+const timelineCard = document.getElementById("timelineCard");
+
 // ===== Themes =====
 function setTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme);
@@ -234,44 +237,62 @@ function splitIntoTimestampBlocks(text) {
   return blocks;
 }
 
+/**
+ * Returns:
+ * - issues: string[]
+ * - hasCriticalError: boolean (invalid timestamps OR out-of-order timestamps)
+ */
 function analyzeTimeline(text) {
   const issues = [];
-  issues.push(...findInvalidTimestamps(text));
+  let hasCriticalError = false;
 
+  // 1) invalid timestamps
+  const invalids = findInvalidTimestamps(text);
+  if (invalids.length) {
+    hasCriticalError = true;
+    issues.push(...invalids);
+  }
+
+  // 2) out-of-order check (valid time lines only)
   const blocks = splitIntoTimestampBlocks(text);
   const timed = blocks.filter(b => b.time);
 
-  if (timed.length < 2) {
-    if (issues.length === 0) issues.push("No or not enough valid timestamps to analyze.");
-    return issues;
-  }
+  if (timed.length >= 2) {
+    let dayOffset = 0;
+    let lastAdj = null;
+    let lastBase = null;
 
-  // Smart rollover only for 20:00 -> 06:00
-  let dayOffset = 0;
-  let lastAdj = null;
-  let lastBase = null;
+    for (const b of timed) {
+      const base = b.time.minutes;
+      let adj = base + dayOffset;
 
-  for (const b of timed) {
-    const base = b.time.minutes;
-    let adj = base + dayOffset;
+      if (lastAdj !== null && adj < lastAdj) {
+        const lastLate = lastBase >= (20 * 60);
+        const curEarly = base <= (6 * 60);
 
-    if (lastAdj !== null && adj < lastAdj) {
-      const lastLate = lastBase >= (20 * 60);
-      const curEarly = base <= (6 * 60);
-      if (lastLate && curEarly) {
-        dayOffset += 1440;
-        adj = base + dayOffset;
-        issues.push(`Midnight rollover detected near: "${b.lines[0].trim()}"`);
-      } else {
-        issues.push(`Out-of-order timestamp detected: "${b.lines[0].trim()}"`);
+        if (lastLate && curEarly) {
+          dayOffset += 1440;
+          adj = base + dayOffset;
+          issues.push(`Midnight rollover detected near: "${b.lines[0].trim()}"`);
+        } else {
+          hasCriticalError = true;
+          issues.push(`Out-of-order timestamp detected: "${b.lines[0].trim()}"`);
+        }
       }
+
+      lastAdj = adj;
+      lastBase = base;
     }
-    lastAdj = adj;
-    lastBase = base;
   }
 
-  if (issues.length === 0) issues.push("No chronology issues detected ✅");
-  return issues;
+  if (!issues.length) issues.push("No chronology issues detected ✅");
+  return { issues, hasCriticalError };
+}
+
+function setTimelineAlert(isAlert) {
+  if (!timelineCard) return;
+  if (isAlert) timelineCard.classList.add("alert");
+  else timelineCard.classList.remove("alert");
 }
 
 function fixChronology(text) {
@@ -295,7 +316,6 @@ function fixChronology(text) {
         dayOffset += 1440;
         adj = base + dayOffset;
       }
-      // else: out-of-order; sorting will fix it without forcing next-day
     }
 
     b._sortKey = adj;
@@ -327,6 +347,7 @@ runBtn.addEventListener("click", async () => {
   changesEl.textContent = "(Changes will appear here)";
   changesCountEl.textContent = "";
   timelineEl.textContent = "(Timeline analysis will appear here)";
+  setTimelineAlert(false);
 
   const raw = (inputEl.value || "").trim();
   if (!raw) {
@@ -338,12 +359,18 @@ runBtn.addEventListener("click", async () => {
     setBusy(true);
     statusEl.textContent = "Checking report…";
 
+    // 1) detect companies + protect them
     updateDetectedCompanies(raw);
 
+    // 2) chronology fix
     const chronoFixed = fixChronology(raw);
 
-    timelineEl.textContent = analyzeTimeline(chronoFixed).join("\n");
+    // 3) analyze after fix (and color the card)
+    const t1 = analyzeTimeline(chronoFixed);
+    timelineEl.textContent = t1.issues.join("\n");
+    setTimelineAlert(t1.hasCriticalError);
 
+    // 4) spell check
     const data = await checkSpelling(chronoFixed, langEl.value);
     const matches = data.matches || [];
     const protectedTerms = parseProtectedTerms();
@@ -354,7 +381,10 @@ runBtn.addEventListener("click", async () => {
     changesEl.textContent = formatChanges(changes, matches.length);
     changesCountEl.textContent = changes.length ? `(${changes.length})` : "";
 
-    timelineEl.textContent = analyzeTimeline(updated).join("\n");
+    // 5) analyze final too (keep alert if critical)
+    const t2 = analyzeTimeline(updated);
+    timelineEl.textContent = t2.issues.join("\n");
+    setTimelineAlert(t2.hasCriticalError);
 
     statusEl.textContent = "Done ✅";
   } catch (e) {
@@ -383,7 +413,11 @@ copyBtn.addEventListener("click", async () => {
 // Live preview while typing
 inputEl.addEventListener("input", () => {
   updateDetectedCompanies(inputEl.value || "");
-  timelineEl.textContent = analyzeTimeline(inputEl.value || "").join("\n");
+  const t = analyzeTimeline(inputEl.value || "");
+  timelineEl.textContent = t.issues.join("\n");
+  setTimelineAlert(t.hasCriticalError);
 });
 updateDetectedCompanies(inputEl.value || "");
-timelineEl.textContent = analyzeTimeline(inputEl.value || "").join("\n");
+const t0 = analyzeTimeline(inputEl.value || "");
+timelineEl.textContent = t0.issues.join("\n");
+setTimelineAlert(t0.hasCriticalError);
