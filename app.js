@@ -1,7 +1,6 @@
 const inputEl = document.getElementById("input");
 const outputEl = document.getElementById("output");
-const checkBtn = document.getElementById("checkBtn");
-const fixChronBtn = document.getElementById("fixChronBtn");
+const runBtn = document.getElementById("runBtn");
 const copyBtn = document.getElementById("copyBtn");
 const statusEl = document.getElementById("status");
 const errorEl = document.getElementById("error");
@@ -30,7 +29,7 @@ function loadTheme() {
 themeSelect?.addEventListener("change", () => setTheme(themeSelect.value));
 loadTheme();
 
-// ---------- Chips + Protected Terms ----------
+// ---------- CHIPS + PROTECTED ----------
 function renderChips(container, items) {
   container.innerHTML = "";
   items.forEach(t => {
@@ -75,36 +74,42 @@ protectedEl.addEventListener("input", () => {
 
 loadProtectedTerms();
 
-// ---------- Detect Companies (1–3 words before CO/Co + punctuation) ----------
+// ---------- DETECT COMPANIES (keeps "Al Harbi") ----------
+// Captures up to 4 words before Co/CO and preserves small prefixes like "Al"
 function detectCompanies(text) {
   const companies = new Set();
-  const regex =
-    /\b((?:[A-Za-z0-9&.\-\/]+\s+){0,2}[A-Za-z0-9&.\-\/]+)\s+(?:CO|Co)\b\s*[.,;:]?,?/g;
 
-  let match;
-  while ((match = regex.exec(text)) !== null) {
-    const name = match[1].trim();
-    if (name.length < 2) continue;
-    companies.add(name);
+  // Words may include letters/numbers and & . - /
+  // Capture 1–4 words before "Co/CO"
+  const regex =
+    /\b((?:[A-Za-z0-9&.\-\/]+(?:\s+|-\s*)?){1,4})\s+(?:CO|Co)\b\s*[.,;:]?,?/g;
+
+  let m;
+  while ((m = regex.exec(text)) !== null) {
+    let name = (m[1] || "").trim();
+
+    // Clean trailing hyphens/spaces
+    name = name.replace(/[-\s]+$/g, "").trim();
+
+    // Optional: normalize multiple spaces
+    name = name.replace(/\s+/g, " ");
+
+    if (name.length >= 2) companies.add(name);
   }
+
   return Array.from(companies);
 }
 
-function updateDetectedCompaniesUI() {
-  const text = inputEl.value || "";
+function updateDetectedCompanies(text) {
   const detected = detectCompanies(text);
   renderChips(detectedCompaniesChipsEl, detected);
 
-  // Auto-add detected companies to Protected Terms
+  // Auto-add to Protected Terms (prevents wrong replacements)
   const merged = Array.from(new Set([...parseProtectedTerms(), ...detected]));
   setProtectedTerms(merged);
-}
 
-inputEl.addEventListener("input", () => {
-  updateDetectedCompaniesUI();
-  analyzeTimelineToUI(inputEl.value || "");
-});
-updateDetectedCompaniesUI();
+  return detected;
+}
 
 // ---------- LanguageTool API ----------
 async function checkSpelling(text, language) {
@@ -128,6 +133,7 @@ function applyCorrectionsAndTrack(originalText, matches, protectedTerms) {
   let updated = originalText;
   const changes = [];
 
+  // Case-insensitive protection
   const protectedLower = new Set(protectedTerms.map(t => t.toLowerCase()));
 
   for (const m of sorted) {
@@ -154,21 +160,21 @@ function applyCorrectionsAndTrack(originalText, matches, protectedTerms) {
 function formatChanges(changes, suggestionsFound) {
   if (!changes.length) {
     return suggestionsFound
-      ? "(Suggestions were found, but no direct replacements were applied — or changes were blocked by Protected Terms.)"
+      ? "(Suggestions found, but no direct replacements were applied — or changes were blocked by Protected Terms.)"
       : "(No adjusted words found)";
   }
   return changes.map(c => `${c.before} → ${c.after}`).join("\n");
 }
 
-// ---------- TIMELINE PARSING + ANALYSIS ----------
+// ---------- TIMELINE PARSE + SMART ROLLOVER ----------
 function parseTimeFromLine(line) {
-  // Supports: "1741hrs", "1741 hrs", "1741hrs.", "0125hrs."
+  // Supports: 1322hrs. / 1322 hrs / 0125hrs / 925hrs
   const m = line.match(/\b(\d{3,4})\s*hrs\b/i);
   if (!m) return null;
 
   const raw = m[1];
-  // 3 digits => HMM, 4 digits => HHMM
   let hh, mm;
+
   if (raw.length === 3) {
     hh = parseInt(raw.slice(0, 1), 10);
     mm = parseInt(raw.slice(1), 10);
@@ -185,7 +191,6 @@ function parseTimeFromLine(line) {
 
 function splitIntoTimestampBlocks(text) {
   const lines = text.split(/\r?\n/);
-
   const blocks = [];
   let current = null;
 
@@ -193,131 +198,113 @@ function splitIntoTimestampBlocks(text) {
     const t = parseTimeFromLine(line);
 
     if (t) {
-      // start a new block
       if (current) blocks.push(current);
       current = { time: t, lines: [line] };
     } else {
-      // attach to current block if exists, else standalone block without time
       if (current) current.lines.push(line);
       else blocks.push({ time: null, lines: [line] });
     }
   }
   if (current) blocks.push(current);
-
   return blocks;
 }
 
+/**
+ * Smart rollover:
+ * Only treat as "midnight rollover" if last time is late (>= 20:00) and current is early (<= 06:00)
+ * Otherwise it's a real out-of-order error (like your 1330 then 1323)
+ */
 function analyzeTimeline(blocks) {
-  // Consider only timed blocks for chronology checks
-  const timed = blocks
-    .map((b, idx) => ({ ...b, idx }))
-    .filter(b => b.time);
-
-  if (timed.length < 2) {
-    return { issues: ["No or not enough timestamps to analyze."], rolloverCount: 0 };
-  }
+  const timed = blocks.filter(b => b.time);
+  if (timed.length < 2) return ["No or not enough timestamps to analyze."];
 
   const issues = [];
-  let rolloverCount = 0;
-
-  let lastAdj = null;
   let dayOffset = 0;
-
-  const seen = new Map(); // minutesAdj -> count
+  let lastAdj = null;
+  let lastBase = null;
 
   for (let i = 0; i < timed.length; i++) {
-    const cur = timed[i];
-    const baseMin = cur.time.minutes;
-    let adj = baseMin + dayOffset;
+    const base = timed[i].time.minutes;
+    let adj = base + dayOffset;
 
     if (lastAdj !== null && adj < lastAdj) {
-      // assume midnight rollover
-      dayOffset += 1440;
-      adj = baseMin + dayOffset;
-      rolloverCount++;
-      issues.push(`Midnight rollover detected near: "${cur.lines[0].trim()}"`);
+      const lastLate = lastBase >= (20 * 60);   // >= 20:00
+      const curEarly = base <= (6 * 60);        // <= 06:00
+
+      if (lastLate && curEarly) {
+        dayOffset += 1440;
+        adj = base + dayOffset;
+        issues.push(`Midnight rollover detected near: "${timed[i].lines[0].trim()}"`);
+      } else {
+        issues.push(`Out-of-order timestamp detected: "${timed[i].lines[0].trim()}" (appears after a later time)`);
+      }
     }
 
-    // out-of-order check (if still out after rollover logic)
-    if (lastAdj !== null && adj < lastAdj) {
-      issues.push(`Out-of-order timestamp near: "${cur.lines[0].trim()}"`);
-    }
-
-    // duplicate time check
-    const key = adj;
-    seen.set(key, (seen.get(key) || 0) + 1);
-
-    cur._adjMinutes = adj;
     lastAdj = adj;
-  }
-
-  for (const [k, c] of seen.entries()) {
-    if (c > 1) issues.push(`Duplicate timestamp detected (${c} times) at minute: ${k}`);
+    lastBase = base;
+    timed[i]._adj = adj;
   }
 
   if (issues.length === 0) issues.push("No chronology issues detected ✅");
-
-  return { issues, rolloverCount };
+  return issues;
 }
 
 function analyzeTimelineToUI(text) {
   const blocks = splitIntoTimestampBlocks(text);
-  const { issues } = analyzeTimeline(blocks);
+  const issues = analyzeTimeline(blocks);
   timelineEl.textContent = issues.join("\n");
 }
 
-analyzeTimelineToUI(inputEl.value || "");
-
-// ---------- FIX CHRONOLOGY ----------
+// ---------- FIX CHRONOLOGY (sort timed blocks; keep rollover rule) ----------
 function fixChronology(text) {
   const blocks = splitIntoTimestampBlocks(text);
 
-  // compute adjusted minutes with midnight rollover for sorting
+  // compute adjusted minutes with SMART rollover for sorting
   let dayOffset = 0;
   let lastAdj = null;
+  let lastBase = null;
 
   for (const b of blocks) {
     if (!b.time) continue;
 
-    let adj = b.time.minutes + dayOffset;
+    const base = b.time.minutes;
+    let adj = base + dayOffset;
 
     if (lastAdj !== null && adj < lastAdj) {
-      dayOffset += 1440;
-      adj = b.time.minutes + dayOffset;
+      const lastLate = lastBase >= (20 * 60);
+      const curEarly = base <= (6 * 60);
+
+      if (lastLate && curEarly) {
+        dayOffset += 1440;
+        adj = base + dayOffset;
+      }
+      // else: it's truly out-of-order, no dayOffset; we still sort by base within same day below
     }
 
-    b._adjMinutes = adj;
+    b._sortKey = adj;
     lastAdj = adj;
+    lastBase = base;
   }
 
-  // Keep untimed blocks in-place unless they were attached to a timed block (already inside block)
-  // Standalone untimed blocks (time=null) will remain at their relative position by giving them a stable key.
-  let stableCounter = 0;
+  // Keep untimed blocks in place at the top (rare)
+  let stable = 0;
   for (const b of blocks) {
     if (b.time) continue;
-    b._adjMinutes = Number.NEGATIVE_INFINITY + stableCounter; // keep order at top
-    stableCounter++;
+    b._sortKey = Number.NEGATIVE_INFINITY + stable++;
   }
 
-  // Sort: untimed standalone first (in original order), then timed blocks by adjusted minutes
-  const sorted = [...blocks].sort((a, b) => {
-    const ax = a._adjMinutes ?? 0;
-    const bx = b._adjMinutes ?? 0;
-    return ax - bx;
-  });
-
+  // Sort by key
+  const sorted = [...blocks].sort((a, b) => (a._sortKey ?? 0) - (b._sortKey ?? 0));
   return sorted.map(b => b.lines.join("\n")).join("\n");
 }
 
-// ---------- UI helpers ----------
+// ---------- ONE BUTTON: RUN QA ----------
 function setBusy(b) {
-  checkBtn.disabled = b;
+  runBtn.disabled = b;
   copyBtn.disabled = b;
-  fixChronBtn.disabled = b;
 }
 
-// ---------- MAIN: SPELL CHECK ----------
-checkBtn.addEventListener("click", async () => {
+runBtn.addEventListener("click", async () => {
   errorEl.textContent = "";
   statusEl.textContent = "";
   outputEl.textContent = "(Result will appear here)";
@@ -325,30 +312,36 @@ checkBtn.addEventListener("click", async () => {
   changesCountEl.textContent = "";
   timelineEl.textContent = "(Timeline analysis will appear here)";
 
-  const text = (inputEl.value || "").trim();
-  if (!text) {
+  const raw = (inputEl.value || "").trim();
+  if (!raw) {
     errorEl.textContent = "Paste a report first.";
     return;
   }
 
   try {
     setBusy(true);
-    statusEl.textContent = "Checking…";
+    statusEl.textContent = "Running QA…";
 
-    updateDetectedCompaniesUI();
-    analyzeTimelineToUI(text);
+    // 1) Detect companies + protect them
+    updateDetectedCompanies(raw);
 
-    const data = await checkSpelling(text, langEl.value);
+    // 2) Fix chronology first (so output is in order)
+    const chronoFixed = fixChronology(raw);
+
+    // 3) Analyze chronology (after fix) and show
+    analyzeTimelineToUI(chronoFixed);
+
+    // 4) Spell check on chrono-fixed text
+    const data = await checkSpelling(chronoFixed, langEl.value);
     const matches = data.matches || [];
     const protectedTerms = parseProtectedTerms();
 
-    const { updated, changes } = applyCorrectionsAndTrack(text, matches, protectedTerms);
+    const { updated, changes } = applyCorrectionsAndTrack(chronoFixed, matches, protectedTerms);
 
+    // 5) Output final + changes + timeline on final too
     outputEl.textContent = updated;
     changesEl.textContent = formatChanges(changes, matches.length);
     changesCountEl.textContent = changes.length ? `(${changes.length})` : "";
-
-    // Re-run timeline analysis on adjusted output too
     analyzeTimelineToUI(updated);
 
     statusEl.textContent = "Done ✅";
@@ -359,29 +352,6 @@ checkBtn.addEventListener("click", async () => {
   } finally {
     setBusy(false);
   }
-});
-
-// ---------- FIX CHRONOLOGY button ----------
-fixChronBtn.addEventListener("click", () => {
-  errorEl.textContent = "";
-  statusEl.textContent = "";
-
-  const text = (inputEl.value || "").trim();
-  if (!text) {
-    errorEl.textContent = "Paste a report first.";
-    return;
-  }
-
-  // Fix based on the raw input (operator controlled)
-  const fixed = fixChronology(text);
-
-  // Put the fixed output into Adjusted Report (doesn't overwrite the input)
-  outputEl.textContent = fixed;
-
-  // Run timeline analysis on fixed
-  analyzeTimelineToUI(fixed);
-
-  statusEl.textContent = "Chronology fixed ✅";
 });
 
 // ---------- COPY ----------
@@ -397,3 +367,11 @@ copyBtn.addEventListener("click", async () => {
     errorEl.textContent = "Copy blocked by browser.";
   }
 });
+
+// Live: keep companies + timeline visible while typing
+inputEl.addEventListener("input", () => {
+  updateDetectedCompanies(inputEl.value || "");
+  analyzeTimelineToUI(inputEl.value || "");
+});
+updateDetectedCompanies(inputEl.value || "");
+analyzeTimelineToUI(inputEl.value || "");
