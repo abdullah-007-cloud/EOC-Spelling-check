@@ -166,9 +166,7 @@
     .hint{ color:var(--muted); font-size:12px; font-weight:800; }
     .mini{ font-size:12px; color:var(--muted); line-height:1.6; margin-top:10px; }
 
-    .chipRow{
-      display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;
-    }
+    .chipRow{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
     .chip{
       padding:6px 10px;
       border-radius:999px;
@@ -187,7 +185,7 @@
         <div class="logo" aria-hidden="true"><span style="font-size:18px;">🛡️</span></div>
         <div>
           <h1>AMAALA EOC</h1>
-          <p>Spell Check • Clean Output • Protected Terms</p>
+          <p>Spell Check • Clean Output • Detected Companies</p>
         </div>
       </div>
 
@@ -220,19 +218,19 @@
     </div>
 
     <div class="hero">
-      <h2>Operator-ready reports in one click.</h2>
+      <h2>Auto-detect company names like: <span style="color:var(--accent);">RSS CO.,</span></h2>
       <p>
-        Add your company/system names to <b>Protected Terms</b> (مثل: ICAD) so the checker never changes them.
+        Any word before <b>CO.,</b> is auto-detected and shown below. Also auto-added to Protected Terms.
       </p>
     </div>
 
     <div class="grid">
-      <!-- Input + Protected Terms -->
+      <!-- Input + Protected + Detected Companies -->
       <div class="card">
         <div class="cardHeader">
           <div>
             <div class="title">📝 Paste Report</div>
-            <div class="sub">Tip: Add acronyms & company names to Protected Terms.</div>
+            <div class="sub">Detected companies will appear automatically.</div>
           </div>
         </div>
 
@@ -240,16 +238,16 @@
           <textarea id="input" placeholder="Paste EOC report here..."></textarea>
 
           <div class="mini">
-            <b>Protected Terms (won’t be changed):</b>  
-            Type one per line (example: ICAD, TBCV, AMAALA, RSSSC).
+            <b>Detected Companies</b> (from pattern: <b>WORD CO.,</b>)
+          </div>
+          <div class="chipRow" id="detectedCompaniesChips"></div>
+
+          <div class="mini">
+            <b>Protected Terms (won’t be changed):</b> one per line.
           </div>
           <textarea id="protectedTerms" placeholder="ICAD&#10;TBCV&#10;AMAALA" style="min-height:110px;"></textarea>
 
-          <div class="chipRow" id="chips"></div>
-
-          <div class="mini">
-            Any exact match will be locked and cannot be replaced by the spell checker.
-          </div>
+          <div class="chipRow" id="protectedChips"></div>
         </div>
       </div>
 
