@@ -30,6 +30,16 @@ themeSelect?.addEventListener("change", () => setTheme(themeSelect.value));
 loadTheme();
 
 // ---------- Protected Terms ----------
+function renderChips(container, items) {
+  container.innerHTML = "";
+  items.forEach(t => {
+    const span = document.createElement("span");
+    span.className = "chip";
+    span.textContent = t;
+    container.appendChild(span);
+  });
+}
+
 function parseProtectedTerms() {
   const raw = (protectedEl.value || "");
   const lines = raw
@@ -56,6 +66,7 @@ function loadProtectedTerms() {
       return;
     }
   } catch {}
+
   const defaults = ["ICAD", "TBCV", "AMAALA", "RSSSC"];
   setProtectedTerms(defaults);
 }
@@ -66,26 +77,20 @@ protectedEl.addEventListener("input", () => {
   localStorage.setItem("amaalaProtectedTerms", JSON.stringify(terms));
 });
 
-function renderChips(container, items) {
-  container.innerHTML = "";
-  items.forEach(t => {
-    const span = document.createElement("span");
-    span.className = "chip";
-    span.textContent = t;
-    container.appendChild(span);
-  });
-}
-
 loadProtectedTerms();
 
-// ---------- Detect Companies: WORD before "CO.,"
-// Example: "RSS CO.," => detect "RSS"
+// ---------- Detect Companies (Enhanced) ----------
+// Detects the token immediately before Co/CO and supports punctuation variations.
+// Examples detected:
+// "RSS CO.,", "MASAH CO.", "ABC CO", "RSG Co,", "NESMA CO;"
+// Also tolerates extra punctuation right after CO (.,;:) and optional trailing comma.
 function detectCompanies(text) {
   const companies = new Set();
 
-  // capture the word right before "CO.,"
-  // supports: RSS CO.,  MASAH CO.,  ABC123 CO.,
-  const regex = /\b([A-Za-z0-9&.-]+)\s+CO\.,/gi;
+  // Capture the token just before "Co/CO"
+  // Token allowed: letters, numbers, &, ., -, /
+  // Pattern: WORD + spaces + CO/Co + optional punctuation + optional comma
+  const regex = /\b([A-Za-z0-9&.\-\/]+)\s+(?:CO|Co)\b(?:\s*)[.,;:]?,?/g;
 
   let match;
   while ((match = regex.exec(text)) !== null) {
@@ -101,7 +106,7 @@ function updateDetectedCompaniesUI() {
 
   renderChips(detectedCompaniesChipsEl, detected);
 
-  // Auto-add detected companies to Protected Terms (so they never get changed)
+  // Auto-add detected companies to Protected Terms
   const currentProtected = parseProtectedTerms();
   const merged = Array.from(new Set([...currentProtected, ...detected]));
   setProtectedTerms(merged);
@@ -133,7 +138,8 @@ function applyCorrectionsAndTrack(originalText, matches, protectedTerms) {
   let updated = originalText;
   const changes = [];
 
-  const protectedSet = new Set(protectedTerms);
+  // Protect case-insensitively too (ICAD, icad, Icad)
+  const protectedLower = new Set(protectedTerms.map(t => t.toLowerCase()));
 
   for (const m of sorted) {
     if (!m.replacements || m.replacements.length === 0) continue;
@@ -141,8 +147,8 @@ function applyCorrectionsAndTrack(originalText, matches, protectedTerms) {
     const before = originalText.slice(m.offset, m.offset + m.length);
     const after = m.replacements[0].value;
 
-    // Don't change protected terms (exact match)
-    if (protectedSet.has(before)) continue;
+    // Don’t change protected terms (case-insensitive)
+    if (protectedLower.has(before.toLowerCase())) continue;
 
     if (!before || before === after) continue;
 
@@ -190,7 +196,7 @@ checkBtn.addEventListener("click", async () => {
     setBusy(true);
     statusEl.textContent = "Checking…";
 
-    // make sure companies are detected before checking
+    // Ensure companies are detected before checking
     updateDetectedCompaniesUI();
 
     const data = await checkSpelling(text, langEl.value);
