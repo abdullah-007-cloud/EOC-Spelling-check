@@ -157,7 +157,7 @@
       line-height: 1.55;
       white-space: pre-wrap;
       word-wrap: break-word;
-      min-height: 140px;
+      min-height: 120px;
     }
     html[data-theme="light"] pre{ background: rgba(255,255,255,.55); }
 
@@ -185,7 +185,7 @@
         <div class="logo" aria-hidden="true"><span style="font-size:18px;">🛡️</span></div>
         <div>
           <h1>AMAALA EOC</h1>
-          <p>Spell Check • Clean Output • Detected Companies</p>
+          <p>Spell Check • Detected Companies • Timeline QA</p>
         </div>
       </div>
 
@@ -210,6 +210,7 @@
         </div>
 
         <button id="checkBtn" class="btn primary" type="button">✅ Check Spelling</button>
+        <button id="fixChronBtn" class="btn" type="button">🕒 Fix Chronology</button>
         <button id="copyBtn" class="btn" type="button">📋 Copy Result</button>
 
         <span id="status" class="status"></span>
@@ -218,35 +219,31 @@
     </div>
 
     <div class="hero">
-      <h2>Auto-detect company names like: <span style="color:var(--accent);">RSS CO.,</span></h2>
+      <h2>Chronology check (timestamps) + spelling in one place.</h2>
       <p>
-        Any word before <b>CO.,</b> is auto-detected and shown below. Also auto-added to Protected Terms.
+        The site will flag out-of-order timestamps and can auto-sort timestamped lines.
+        Midnight rollover supported (e.g., 2359hrs → 0005hrs).
       </p>
     </div>
 
     <div class="grid">
-      <!-- Input + Protected + Detected Companies -->
+      <!-- Input + lists -->
       <div class="card">
         <div class="cardHeader">
           <div>
             <div class="title">📝 Paste Report</div>
-            <div class="sub">Detected companies will appear automatically.</div>
+            <div class="sub">Companies detected from: “NAME CO…”</div>
           </div>
         </div>
 
         <div class="cardBody">
           <textarea id="input" placeholder="Paste EOC report here..."></textarea>
 
-          <div class="mini">
-            <b>Detected Companies</b> (from pattern: <b>WORD CO.,</b>)
-          </div>
+          <div class="mini"><b>Detected Companies</b></div>
           <div class="chipRow" id="detectedCompaniesChips"></div>
 
-          <div class="mini">
-            <b>Protected Terms (won’t be changed):</b> one per line.
-          </div>
+          <div class="mini"><b>Protected Terms (won’t be changed)</b> — one per line</div>
           <textarea id="protectedTerms" placeholder="ICAD&#10;TBCV&#10;AMAALA" style="min-height:110px;"></textarea>
-
           <div class="chipRow" id="protectedChips"></div>
         </div>
       </div>
@@ -274,6 +271,18 @@
           </div>
           <div class="cardBody">
             <pre id="changes">(Changes will appear here)</pre>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="cardHeader">
+            <div>
+              <div class="title">🧭 Timeline Analysis</div>
+              <div class="sub">Flags chronology issues.</div>
+            </div>
+          </div>
+          <div class="cardBody">
+            <pre id="timeline">(Timeline analysis will appear here)</pre>
           </div>
         </div>
       </div>
