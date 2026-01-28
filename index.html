@@ -1,434 +1,239 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>AMAALA EOC</title>
-  <style>
-    :root{
-      --bg:#0b1020; --card:#0f1a33; --muted:#93a4c7; --text:#eaf0ff;
-      --accent:#4f8cff; --ok:#1ed760; --bad:#ff4d4d; --line:#1f2d55;
-    }
-    [data-theme="light"]{
-      --bg:#f6f8ff; --card:#ffffff; --muted:#5a6b93; --text:#0b1020;
-      --accent:#2f6bff; --line:#dde6ff;
-    }
-    *{ box-sizing:border-box; }
-    body{ margin:0; font-family:system-ui,Segoe UI,Arial; background:var(--bg); color:var(--text); }
-    .wrap{ max-width:1150px; margin:0 auto; padding:22px; }
-    .top{
-      display:flex; gap:14px; align-items:center; justify-content:space-between;
-      padding:14px 16px; background:linear-gradient(135deg,var(--card),transparent);
-      border:1px solid var(--line); border-radius:16px; overflow:hidden;
-    }
-    .brand{ display:flex; align-items:center; gap:12px; min-width:260px; }
-    .logo{
-      width:54px; height:54px; border-radius:14px; background:#fff;
-      display:grid; place-items:center; overflow:hidden;
-      border:1px solid var(--line); flex:0 0 auto;
-    }
-    .logo img{ width:100%; height:100%; object-fit:contain; }
-    h1{ font-size:18px; margin:0; }
-    .sub{ color:var(--muted); font-size:12px; margin-top:2px; }
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>AMAALA EOC</title>
 
-    .controls{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-end; }
-    .btn, select, input{
-      border:1px solid var(--line);
-      background:var(--card); color:var(--text);
-      padding:10px 12px; border-radius:12px;
-    }
-    .btn{ cursor:pointer; }
-    .btn.primary{ background:var(--accent); border-color:transparent; color:white; font-weight:800; }
+<style>
+:root{
+  --bg:#f6f8ff; --card:#ffffff; --muted:#5a6b93; --text:#0b1020;
+  --accent:#2f6bff; --ok:#1ed760; --bad:#ff4d4d; --line:#dde6ff;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;font-family:system-ui,Segoe UI,Arial;
+  background:var(--bg);color:var(--text)
+}
+.wrap{max-width:1200px;margin:0 auto;padding:22px}
+.top{
+  display:flex;justify-content:space-between;align-items:center;
+  background:var(--card);border:1px solid var(--line);
+  border-radius:18px;padding:14px 18px
+}
+.brand{display:flex;gap:12px;align-items:center}
+.logo{
+  width:54px;height:54px;border-radius:14px;
+  border:1px solid var(--line);
+  display:grid;place-items:center;background:#fff
+}
+.logo img{width:100%;height:100%;object-fit:contain}
+h1{margin:0;font-size:18px}
+.sub{font-size:12px;color:var(--muted)}
 
-    .grid{ margin-top:16px; display:grid; grid-template-columns:1fr; gap:14px; }
-    @media(min-width:980px){ .grid{ grid-template-columns:1.1fr 0.9fr; } }
+.controls{display:flex;gap:10px}
+.btn,select,input{
+  border:1px solid var(--line);
+  background:#fff;padding:10px 12px;
+  border-radius:12px;cursor:pointer
+}
+.btn.primary{
+  background:var(--accent);color:#fff;border:none;font-weight:700
+}
 
-    .card{
-      background:var(--card); border:1px solid var(--line);
-      border-radius:16px; padding:14px; overflow:hidden; min-width:0;
-    }
-    .titleRow{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
-    .pill{
-      border:1px solid var(--line);
-      padding:7px 10px; border-radius:999px;
-      color:var(--muted); font-size:12px; display:inline-block;
-      max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-    }
+.grid{
+  display:grid;grid-template-columns:1fr;gap:16px;margin-top:18px
+}
+@media(min-width:1000px){
+  .grid{grid-template-columns:1.2fr 1fr}
+}
 
-    /* Chat UI */
-    .chatBox{
-      height:360px;
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:12px;
-      overflow:auto;
-      background:rgba(255,255,255,0.03);
-    }
-    .msg{ display:flex; margin:10px 0; }
-    .msg.bot{ justify-content:flex-start; }
-    .msg.me{ justify-content:flex-end; }
-    .bubble{
-      max-width:80%;
-      padding:10px 12px;
-      border-radius:14px;
-      border:1px solid var(--line);
-      background:rgba(255,255,255,0.04);
-      white-space:pre-wrap;
-      word-break:break-word;
-    }
-    .msg.me .bubble{
-      background:rgba(79,140,255,0.18);
-      border-color:rgba(79,140,255,0.35);
-    }
-    .nameLine{
-      font-size:11px;
-      color:var(--muted);
-      margin-bottom:4px;
-    }
-    .chatInputRow{
-      display:flex; gap:10px; margin-top:10px;
-    }
-    .chatInputRow input{
-      flex:1; min-width:0;
-      outline:none;
-    }
-    .small{ font-size:12px; color:var(--muted); }
+.card{
+  background:var(--card);border:1px solid var(--line);
+  border-radius:18px;padding:16px;overflow:hidden
+}
 
-    /* Report UI */
-    textarea{
-      width:100%;
-      min-height:220px;
-      max-height:420px;
-      resize:vertical;
-      padding:12px;
-      border-radius:14px;
-      border:1px solid var(--line);
-      background:transparent;
-      color:var(--text);
-      outline:none;
-      overflow:auto;
-      display:block;
-      min-width:0;
-    }
-    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:10px; }
-    .row > *{ min-width:0; }
+.pill{
+  display:inline-block;padding:6px 10px;
+  border:1px solid var(--line);
+  border-radius:999px;font-size:12px;color:var(--muted)
+}
 
-    /* Right outputs */
-    .split{ display:grid; gap:10px; grid-template-columns:1fr; min-width:0; }
-    @media(min-width:980px){ .split{ grid-template-columns:1fr 1fr; } }
-    .result{
-      white-space:pre-wrap;
-      background:rgba(255,255,255,0.03);
-      border:1px solid var(--line);
-      padding:12px;
-      border-radius:14px;
-      min-height:120px;
-      max-height:260px;
-      overflow:auto;
-      min-width:0;
-    }
-    .danger{ border-color:var(--bad) !important; box-shadow:0 0 0 2px rgba(255,77,77,0.20) inset; }
-    .good{ border-color:var(--ok) !important; box-shadow:0 0 0 2px rgba(30,215,96,0.15) inset; }
-  </style>
+/* CHAT */
+.chatBox{
+  height:320px;border:1px solid var(--line);
+  border-radius:14px;padding:12px;
+  overflow:auto;background:#f9fbff
+}
+.msg{margin:10px 0;display:flex}
+.msg.bot{justify-content:flex-start}
+.msg.me{justify-content:flex-end}
+.bubble{
+  max-width:78%;padding:10px 12px;
+  border-radius:14px;border:1px solid var(--line);
+  background:#eef3ff;white-space:pre-wrap
+}
+.msg.me .bubble{background:#dbe7ff}
+.name{font-size:11px;color:var(--muted);margin-bottom:4px}
+
+.chatRow{display:flex;gap:10px;margin-top:10px}
+.chatRow input{flex:1}
+
+/* REPORT */
+textarea{
+  width:100%;min-height:220px;
+  border-radius:14px;border:1px solid var(--line);
+  padding:12px;resize:vertical
+}
+
+.result{
+  border:1px solid var(--line);
+  border-radius:14px;padding:12px;
+  background:#f9fbff;
+  white-space:pre-wrap;overflow:auto
+}
+.danger{border-color:var(--bad)}
+.good{border-color:var(--ok)}
+
+.dashboard2{
+  display:grid;gap:12px
+}
+@media(min-width:1000px){
+  .dashboard2{grid-template-columns:1fr 1fr}
+}
+
+.small{font-size:12px;color:var(--muted)}
+</style>
 </head>
 
 <body>
-  <div class="wrap">
+<div class="wrap">
 
-    <div class="top">
-      <div class="brand">
-        <div class="logo"><img id="logoImg" alt="AMAALA EOC"/></div>
-        <div>
-          <h1>AMAALA EOC</h1>
-          <div class="sub" id="subTxt">EOC Operator (Chat) + Check Report (AI)</div>
-        </div>
-      </div>
-
-      <div class="controls">
-        <select id="langSel">
-          <option value="en">English</option>
-          <option value="ar">العربية</option>
-        </select>
-        <button class="btn" id="themeBtn">Theme</button>
-        <label class="btn" style="cursor:pointer">
-          <input id="logoPick" type="file" accept="image/*" style="display:none">
-          <span id="logoTxt">Logo</span>
-        </label>
-      </div>
+<!-- HEADER -->
+<div class="top">
+  <div class="brand">
+    <div class="logo"><img src="" id="logoImg"></div>
+    <div>
+      <h1>AMAALA EOC</h1>
+      <div class="sub">EOC Operator · Chat & Report Check</div>
     </div>
+  </div>
+  <div class="controls">
+    <select id="langSel">
+      <option value="en">English</option>
+      <option value="ar">العربية</option>
+    </select>
+    <button class="btn" id="themeBtn">Theme</button>
+    <label class="btn">
+      Logo<input type="file" hidden id="logoPick">
+    </label>
+  </div>
+</div>
 
-    <div class="grid">
-      <!-- LEFT COLUMN -->
-      <div class="card">
-        <div class="titleRow">
-          <div class="pill" id="chatPill">EOC Operator (Chat)</div>
-          <div class="small" id="chatStatus"></div>
-        </div>
+<div class="grid">
 
-        <div class="chatBox" id="chatBox"></div>
+<!-- LEFT -->
+<div class="card">
+  <span class="pill">EOC Operator (Chat)</span>
+  <div class="chatBox" id="chatBox"></div>
 
-        <div class="chatInputRow">
-          <input id="chatInput" placeholder="Type a message..." />
-          <button class="btn primary" id="sendBtn">Send</button>
-        </div>
+  <div class="chatRow">
+    <input id="chatInput" placeholder="Type message…">
+    <button class="btn primary" id="sendBtn">Send</button>
+  </div>
 
-        <hr style="border:0;border-top:1px solid var(--line); margin:14px 0; opacity:.7">
+  <hr style="margin:16px 0;border:none;border-top:1px solid var(--line)">
 
-        <div class="titleRow">
-          <div class="pill" id="reportPill">Check Report</div>
-          <div class="small" id="reportStatus"></div>
-        </div>
+  <span class="pill">Check Report</span>
+  <textarea id="reportInput" placeholder="Paste the incident report here…"></textarea>
 
-        <textarea id="reportInput" placeholder="Paste the incident report here..."></textarea>
+  <div class="chatRow">
+    <input id="protectedTerms" placeholder="Protected terms e.g. ICAD,TBCV,AMAALA">
+    <button class="btn primary" id="checkBtn">Check Report</button>
+  </div>
+</div>
 
-        <div class="row">
-          <input id="protectedTerms" style="flex:1; min-width:260px"
-                 placeholder="Protected terms (comma) e.g., ICAD,TBCV,AMAALA" />
-          <button class="btn primary" id="checkBtn">Check Report</button>
-        </div>
-      </div>
+<!-- RIGHT -->
+<div class="card">
 
-      <!-- RIGHT COLUMN -->
-      <div class="card">
-        <div class="split">
-          <div>
-            <div class="pill" id="finalPill">Final Output</div>
-            <div class="result" id="finalOut"></div>
-          </div>
-          <div>
-            <div class="pill" id="timelinePill">Timeline Analysis</div>
-            <div class="result" id="timelineOut"></div>
-          </div>
-        </div>
+  <!-- FINAL OUTPUT -->
+  <span class="pill">Final Output</span>
+  <div class="result" id="finalOut" style="min-height:220px;max-height:320px"></div>
 
-        <div class="split" style="margin-top:10px">
-          <div>
-            <div class="pill" id="companiesPill">Detected Companies</div>
-            <div class="result" id="companiesOut"></div>
-          </div>
-          <div>
-            <div class="pill" id="changesPill">Adjusted Words Only</div>
-            <div class="result" id="changesOut"></div>
-          </div>
-        </div>
-
-        <div class="small" style="margin-top:10px">
-          Tip: If Timeline Analysis turns red, there are timestamp issues.
-        </div>
-      </div>
+  <!-- TIMELINE + COMPANIES -->
+  <div class="dashboard2" style="margin-top:14px">
+    <div>
+      <span class="pill">Timeline Analysis</span>
+      <div class="result" id="timelineOut" style="min-height:140px"></div>
+    </div>
+    <div>
+      <span class="pill">Detected Companies</span>
+      <div class="result" id="companiesOut" style="min-height:140px"></div>
     </div>
   </div>
 
+  <!-- CHANGES -->
+  <div style="margin-top:14px">
+    <span class="pill">Adjusted Words Only</span>
+    <div class="result" id="changesOut" style="min-height:180px;max-height:260px"></div>
+  </div>
+
+  <div class="small" style="margin-top:10px">
+    If Timeline Analysis turns red, timestamps need correction.
+  </div>
+</div>
+
+</div>
+</div>
+
 <script>
-  // ====== EDIT ME ======
-  const WORKER_BASE = "https://black-cloud-2eb0.md00700tabuk.workers.dev";
-  const AUTH_TOKEN = ""; // if you set AUTH_TOKEN secret, put the same here
-  // =====================
+const WORKER_BASE="https://black-cloud-2eb0.md00700tabuk.workers.dev";
+const chatBox=document.getElementById("chatBox");
 
-  const $ = (id)=>document.getElementById(id);
+function addMsg(role,name,text){
+  const row=document.createElement("div");
+  row.className="msg "+role;
+  const bubble=document.createElement("div");
+  bubble.className="bubble";
+  bubble.innerHTML="<div class='name'>"+name+"</div>"+text;
+  row.appendChild(bubble);
+  chatBox.appendChild(row);
+  chatBox.scrollTop=chatBox.scrollHeight;
+}
 
-  // Default logo
-  const defaultLogo = "data:image/svg+xml;base64," + btoa(`
-    <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120">
-      <rect width="120" height="120" rx="18" fill="#ffffff"/>
-      <text x="60" y="62" text-anchor="middle" font-size="36" font-family="Arial" fill="#0b1020">EOC</text>
-      <text x="60" y="90" text-anchor="middle" font-size="12" font-family="Arial" fill="#2f6bff">AMAALA</text>
-    </svg>
-  `);
-  $("logoImg").src = defaultLogo;
+addMsg("bot","EOC Operator","Ready. Paste a report or ask a question.");
 
-  // Logo upload
-  $("logoPick").addEventListener("change", (e)=>{
-    const file = e.target.files?.[0];
-    if(!file) return;
-    const r = new FileReader();
-    r.onload = ()=>{ $("logoImg").src = r.result; };
-    r.readAsDataURL(file);
-  });
+document.getElementById("sendBtn").onclick=async()=>{
+  const msg=document.getElementById("chatInput").value.trim();
+  if(!msg)return;
+  addMsg("me","You",msg);
+  document.getElementById("chatInput").value="";
+  const r=await fetch(WORKER_BASE+"/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:msg})});
+  const d=await r.json();
+  addMsg("bot","EOC Operator",d.reply||"No reply");
+};
 
-  // Theme
-  let theme = localStorage.getItem("theme") || "dark";
-  setTheme(theme);
-  $("themeBtn").onclick = () => {
-    theme = (theme === "dark") ? "light" : "dark";
-    setTheme(theme);
-  };
-  function setTheme(t){
-    document.documentElement.setAttribute("data-theme", t === "light" ? "light" : "");
-    localStorage.setItem("theme", t);
+document.getElementById("checkBtn").onclick=async()=>{
+  ["finalOut","timelineOut","companiesOut","changesOut"].forEach(id=>document.getElementById(id).textContent="");
+  const report=document.getElementById("reportInput").value;
+  const terms=document.getElementById("protectedTerms").value.split(",").map(x=>x.trim()).filter(Boolean);
+  const r=await fetch(WORKER_BASE+"/report",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({report,protectedTerms:terms})});
+  const d=await r.json();
+
+  document.getElementById("finalOut").textContent=d.final_report||"-";
+  document.getElementById("companiesOut").textContent=(d.detected_companies||[]).join("\n")||"-";
+  document.getElementById("changesOut").textContent=(d.changes||[]).join("\n")||"-";
+
+  const t=document.getElementById("timelineOut");
+  if(d.time_issues?.length){
+    t.classList.add("danger");
+    t.textContent=d.time_issues.join("\n");
+  }else{
+    t.classList.remove("danger");
+    t.classList.add("good");
+    t.textContent="No timestamp issues ✅";
   }
-
-  // i18n
-  const i18n = {
-    en: {
-      sub:"EOC Operator (Chat) + Check Report (AI)",
-      logo:"Logo",
-      chatPH:"Type a message...",
-      reportPH:"Paste the incident report here...",
-      chatPill:"EOC Operator (Chat)",
-      reportPill:"Check Report",
-      final:"Final Output",
-      timeline:"Timeline Analysis",
-      companies:"Detected Companies",
-      changes:"Adjusted Words Only",
-      send:"Send",
-      check:"Check Report",
-    },
-    ar: {
-      sub:"مشغل مركز العمليات (شات) + تدقيق التقرير (AI)",
-      logo:"الشعار",
-      chatPH:"اكتب رسالتك...",
-      reportPH:"الصق التقرير هنا...",
-      chatPill:"EOC Operator (شات)",
-      reportPill:"تدقيق التقرير",
-      final:"المخرجات النهائية",
-      timeline:"تحليل التسلسل الزمني",
-      companies:"الشركات المكتشفة",
-      changes:"الكلمات المعدلة فقط",
-      send:"إرسال",
-      check:"تدقيق التقرير",
-    }
-  };
-
-  $("langSel").onchange = applyLang;
-  function applyLang(){
-    const lang = $("langSel").value;
-    document.documentElement.dir = (lang === "ar") ? "rtl" : "ltr";
-    $("subTxt").textContent = i18n[lang].sub;
-    $("logoTxt").textContent = i18n[lang].logo;
-    $("chatInput").placeholder = i18n[lang].chatPH;
-    $("reportInput").placeholder = i18n[lang].reportPH;
-    $("chatPill").textContent = i18n[lang].chatPill;
-    $("reportPill").textContent = i18n[lang].reportPill;
-    $("finalPill").textContent = i18n[lang].final;
-    $("timelinePill").textContent = i18n[lang].timeline;
-    $("companiesPill").textContent = i18n[lang].companies;
-    $("changesPill").textContent = i18n[lang].changes;
-    $("sendBtn").textContent = i18n[lang].send;
-    $("checkBtn").textContent = i18n[lang].check;
-  }
-  applyLang();
-
-  function authHeader(){
-    return AUTH_TOKEN ? { "Authorization": "Bearer " + AUTH_TOKEN } : {};
-  }
-
-  // Chat bubbles
-  const chatBox = $("chatBox");
-  function addMsg(role, name, text){
-    const row = document.createElement("div");
-    row.className = "msg " + (role === "me" ? "me" : "bot");
-
-    const bubble = document.createElement("div");
-    bubble.className = "bubble";
-
-    const n = document.createElement("div");
-    n.className = "nameLine";
-    n.textContent = name;
-
-    const t = document.createElement("div");
-    t.textContent = text;
-
-    bubble.appendChild(n);
-    bubble.appendChild(t);
-    row.appendChild(bubble);
-
-    chatBox.appendChild(row);
-    chatBox.scrollTop = chatBox.scrollHeight;
-  }
-
-  // initial greeting
-  addMsg("bot", "EOC Operator", "Ready. Paste your message or ask me to check a report.");
-
-  async function sendChat(){
-    const lang = $("langSel").value;
-    const msg = $("chatInput").value.trim();
-    if(!msg) return;
-
-    addMsg("me", "You", msg);
-    $("chatInput").value = "";
-    $("chatStatus").textContent = "Working...";
-
-    try{
-      const res = await fetch(WORKER_BASE + "/chat", {
-        method:"POST",
-        headers:{ "Content-Type":"application/json", ...authHeader() },
-        body: JSON.stringify({ message: msg, lang })
-      });
-      const data = await res.json();
-      if(!res.ok){
-        addMsg("bot", "EOC Operator", "Error: " + JSON.stringify(data));
-        $("chatStatus").textContent = "Error ❌";
-        return;
-      }
-      addMsg("bot", "EOC Operator", data.reply || "(no reply)");
-      $("chatStatus").textContent = "Done ✅";
-    }catch(err){
-      addMsg("bot", "EOC Operator", "Error: " + String(err));
-      $("chatStatus").textContent = "Error ❌";
-    }
-  }
-
-  $("sendBtn").onclick = sendChat;
-  $("chatInput").addEventListener("keydown", (e)=>{
-    if(e.key === "Enter"){
-      e.preventDefault();
-      sendChat();
-    }
-  });
-
-  // Report
-  function clearOutputs(){
-    $("finalOut").textContent = "";
-    $("timelineOut").textContent = "";
-    $("companiesOut").textContent = "";
-    $("changesOut").textContent = "";
-    $("timelineOut").classList.remove("danger","good");
-  }
-
-  $("checkBtn").onclick = async ()=>{
-    clearOutputs();
-    $("reportStatus").textContent = "Checking...";
-
-    const lang = $("langSel").value;
-    const report = $("reportInput").value.trim();
-    const protectedTerms = $("protectedTerms").value
-      .split(",").map(s=>s.trim()).filter(Boolean);
-
-    if(!report){ $("reportStatus").textContent = ""; return; }
-
-    try{
-      const res = await fetch(WORKER_BASE + "/report", {
-        method:"POST",
-        headers:{ "Content-Type":"application/json", ...authHeader() },
-        body: JSON.stringify({ report, lang, protectedTerms })
-      });
-      const data = await res.json();
-
-      if(!res.ok){
-        $("finalOut").textContent = "Error ❌";
-        $("timelineOut").classList.add("danger");
-        $("timelineOut").textContent = JSON.stringify(data, null, 2);
-        $("reportStatus").textContent = "Error ❌";
-        return;
-      }
-
-      $("finalOut").textContent = data.final_report || "-";
-      $("companiesOut").textContent = (data.detected_companies || []).join("\n") || "-";
-      $("changesOut").textContent = (data.changes || []).join("\n") || "-";
-
-      const issues = data.time_issues || [];
-      $("timelineOut").textContent = issues.length ? issues.join("\n") : "No timestamp issues ✅";
-      $("timelineOut").classList.toggle("danger", issues.length > 0);
-      $("timelineOut").classList.toggle("good", issues.length === 0);
-
-      $("reportStatus").textContent = "Done ✅";
-    }catch(err){
-      $("reportStatus").textContent = "Error ❌";
-      $("timelineOut").classList.add("danger");
-      $("timelineOut").textContent = String(err);
-    }
-  };
+};
 </script>
 </body>
 </html>
