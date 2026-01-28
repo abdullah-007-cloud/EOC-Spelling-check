@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>AMAALA EOC</title>
+
   <style>
     :root{
       --bg:#0b1020; --card:#0f1a33; --muted:#93a4c7; --text:#eaf0ff;
@@ -13,58 +14,131 @@
       --bg:#f6f8ff; --card:#ffffff; --muted:#5a6b93; --text:#0b1020;
       --accent:#2f6bff; --line:#dde6ff;
     }
+
+    *{ box-sizing:border-box; }
     body{ margin:0; font-family:system-ui,Segoe UI,Arial; background:var(--bg); color:var(--text); }
+
     .wrap{ max-width:1100px; margin:0 auto; padding:22px; }
+
     .top{
       display:flex; gap:14px; align-items:center; justify-content:space-between;
       padding:14px 16px; background:linear-gradient(135deg,var(--card),transparent);
       border:1px solid var(--line); border-radius:16px;
+      overflow:hidden;
     }
-    .brand{ display:flex; align-items:center; gap:12px; }
+    .brand{ display:flex; align-items:center; gap:12px; min-width:240px; }
     .logo{
       width:54px; height:54px; border-radius:14px; background:#fff;
       display:grid; place-items:center; overflow:hidden;
-      border:1px solid var(--line);
+      border:1px solid var(--line); flex:0 0 auto;
     }
     .logo img{ width:100%; height:100%; object-fit:contain; }
     h1{ font-size:18px; margin:0; }
     .sub{ color:var(--muted); font-size:12px; margin-top:2px; }
-    .controls{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+
+    .controls{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-end; }
     .btn, select{
       border:1px solid var(--line);
       background:var(--card); color:var(--text);
       padding:10px 12px; border-radius:12px; cursor:pointer;
+      max-width:100%;
     }
     .btn.primary{ background:var(--accent); border-color:transparent; color:white; font-weight:700; }
-    .grid{ margin-top:16px; display:grid; grid-template-columns:1fr; gap:14px; }
-    @media(min-width:980px){ .grid{ grid-template-columns:1fr 1fr; } }
-    .card{
-      background:var(--card); border:1px solid var(--line);
-      border-radius:16px; padding:14px;
-    }
+
     .tabs{ display:flex; gap:10px; margin-top:14px; }
-    .tab{ padding:10px 12px; border-radius:12px; border:1px solid var(--line); background:transparent; color:var(--text); cursor:pointer; }
+    .tab{
+      padding:10px 12px; border-radius:12px; border:1px solid var(--line);
+      background:transparent; color:var(--text); cursor:pointer;
+    }
     .tab.active{ background:var(--accent); border-color:transparent; color:white; font-weight:700; }
+
+    .grid{
+      margin-top:16px;
+      display:grid;
+      grid-template-columns:1fr;
+      gap:14px;
+    }
+    @media(min-width:980px){
+      .grid{ grid-template-columns:1fr 1fr; }
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:14px;
+      overflow:hidden; /* يمنع أي شيء يطلع برا */
+      min-width:0;
+    }
+
+    .pill{
+      border:1px solid var(--line);
+      padding:8px 10px;
+      border-radius:999px;
+      color:var(--muted);
+      font-size:12px;
+      display:inline-block;
+      max-width:100%;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+
     textarea{
-      width:100%; min-height:210px; resize:vertical;
-      padding:12px; border-radius:14px; border:1px solid var(--line);
-      background:transparent; color:var(--text); outline:none;
+      width:100%;
+      min-height:210px;
+      max-height:420px;
+      resize:vertical;
+      padding:12px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:transparent;
+      color:var(--text);
+      outline:none;
+      overflow:auto;
+      display:block;
+      min-width:0;
     }
+
     .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:10px; }
-    .pill{ border:1px solid var(--line); padding:8px 10px; border-radius:999px; color:var(--muted); font-size:12px; }
-    .list{ margin:10px 0 0; padding-left:18px; color:var(--muted); }
+    .row > *{ min-width:0; }
+
     .result{
-      white-space:pre-wrap; background:rgba(255,255,255,0.03);
-      border:1px solid var(--line); padding:12px; border-radius:14px; min-height:120px;
+      white-space:pre-wrap;
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--line);
+      padding:12px;
+      border-radius:14px;
+      min-height:120px;
+      max-height:320px;
+      overflow:auto;
+      min-width:0;
     }
-    .danger{ border-color:var(--bad) !important; box-shadow:0 0 0 2px rgba(255,77,77,0.2) inset; }
+
+    .danger{ border-color:var(--bad) !important; box-shadow:0 0 0 2px rgba(255,77,77,0.20) inset; }
     .good{ border-color:var(--ok) !important; box-shadow:0 0 0 2px rgba(30,215,96,0.15) inset; }
+
     .small{ font-size:12px; color:var(--muted); }
-    .split{ display:grid; gap:10px; grid-template-columns:1fr; }
-    @media(min-width:980px){ .split{ grid-template-columns:1fr 1fr; } }
     .muted{ color:var(--muted); }
+
+    .split{
+      display:grid;
+      gap:10px;
+      grid-template-columns:1fr;
+      min-width:0;
+    }
+    @media(min-width:980px){
+      .split{ grid-template-columns:1fr 1fr; }
+    }
+
+    .ghost{
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.5;
+    }
   </style>
 </head>
+
 <body>
   <div class="wrap" id="app">
     <div class="top">
@@ -177,20 +251,10 @@
     theme = (theme === "dark") ? "light" : "dark";
     setTheme(theme);
   };
+
   function setTheme(t){
     document.documentElement.setAttribute("data-theme", t === "light" ? "light" : "");
     localStorage.setItem("theme", t);
-  }
-
-  // Tabs
-  $("tabChat").onclick = () => switchTab("chat");
-  $("tabReport").onclick = () => switchTab("report");
-  function switchTab(tab){
-    const isChat = tab === "chat";
-    $("tabChat").classList.toggle("active", isChat);
-    $("tabReport").classList.toggle("active", !isChat);
-    $("chatView").style.display = isChat ? "" : "none";
-    $("reportView").style.display = isChat ? "none" : "";
   }
 
   // i18n
@@ -207,6 +271,8 @@
       footer:"Tip: If Timeline Analysis turns red, there are timestamp issues.",
       chatPH:"Type a message...",
       reportPH:"Paste report here...",
+      chatModeRight:"Chat mode: the right panel is reserved for Check Report outputs.",
+      reportModeRight:"Report mode: results will appear here after running Check Report."
     },
     ar: {
       sub:"شات + تدقيق التقرير (AI)",
@@ -220,10 +286,18 @@
       footer:"معلومة: إذا صار تحليل التسلسل الزمني أحمر، فيه مشكلة في الأوقات.",
       chatPH:"اكتب رسالتك...",
       reportPH:"الصق التقرير هنا...",
+      chatModeRight:"وضع الشات: لوحة اليمين مخصصة لنتائج تدقيق التقرير فقط.",
+      reportModeRight:"وضع التقرير: النتائج ستظهر هنا بعد الضغط على تدقيق التقرير."
     }
   };
 
-  $("langSel").onchange = applyLang;
+  $("langSel").onchange = () => {
+    applyLang();
+    // refresh right panel hint depending on tab
+    if (isChatMode()) setRightPanelChatHint();
+    else setRightPanelReportHint();
+  };
+
   function applyLang(){
     const lang = $("langSel").value;
     document.documentElement.dir = (lang === "ar") ? "rtl" : "ltr";
@@ -254,7 +328,53 @@
     return AUTH_TOKEN ? { "Authorization": "Bearer " + AUTH_TOKEN } : {};
   }
 
-  // Chat
+  function isChatMode(){
+    return $("tabChat").classList.contains("active");
+  }
+
+  // Tabs
+  $("tabChat").onclick = () => switchTab("chat");
+  $("tabReport").onclick = () => switchTab("report");
+
+  function switchTab(tab){
+    const isChat = tab === "chat";
+    $("tabChat").classList.toggle("active", isChat);
+    $("tabReport").classList.toggle("active", !isChat);
+    $("chatView").style.display = isChat ? "" : "none";
+    $("reportView").style.display = isChat ? "none" : "";
+
+    if (isChat) {
+      // right panel is NOT for chat results
+      setRightPanelChatHint();
+    } else {
+      setRightPanelReportHint();
+      // Clear report outputs when entering report tab (optional clean)
+      clearReportOutputs();
+    }
+  }
+
+  function setRightPanelChatHint(){
+    const lang = $("langSel").value;
+    $("finalOut").textContent = i18n[lang].chatModeRight;
+    $("timelineBox").textContent = "";
+    $("companiesOut").textContent = "";
+    $("changesOut").textContent = "";
+    $("timelineBox").classList.remove("danger","good");
+  }
+
+  function setRightPanelReportHint(){
+    const lang = $("langSel").value;
+    $("finalOut").textContent = i18n[lang].reportModeRight;
+    $("timelineBox").textContent = "";
+    $("companiesOut").textContent = "";
+    $("changesOut").textContent = "";
+    $("timelineBox").classList.remove("danger","good");
+  }
+
+  // Initialize right panel as Chat mode
+  setRightPanelChatHint();
+
+  // Chat (NO duplication: only show in chatOut)
   $("chatSend").onclick = async ()=>{
     $("chatStatus").textContent = "Working...";
     const lang = $("langSel").value;
@@ -268,8 +388,9 @@
         body: JSON.stringify({ message: msg, lang })
       });
       const data = await res.json();
+
+      // show only here
       $("chatOut").textContent = data.reply || JSON.stringify(data, null, 2);
-      $("finalOut").textContent = data.reply || "";
       $("chatStatus").textContent = res.ok ? "Done ✅" : "Error ❌";
     }catch(err){
       $("chatStatus").textContent = "Error ❌";
@@ -280,7 +401,7 @@
   // Report (ALL tasks in one button)
   $("reportRun").onclick = async ()=>{
     $("reportStatus").textContent = "Checking...";
-    resetOutputs();
+    clearReportOutputs();
 
     const lang = $("langSel").value;
     const report = $("reportInput").value.trim();
@@ -300,13 +421,21 @@
 
       const data = await res.json();
 
-      // Final
-      $("finalOut").textContent = data.final_report || "";
+      if(!res.ok){
+        $("finalOut").textContent = "Error ❌";
+        $("timelineBox").classList.add("danger");
+        $("timelineBox").textContent = JSON.stringify(data, null, 2);
+        $("reportStatus").textContent = "Error ❌";
+        return;
+      }
+
+      // Final report
+      $("finalOut").textContent = data.final_report || "-";
 
       // Companies
       $("companiesOut").textContent = (data.detected_companies || []).join("\n") || "-";
 
-      // Changes
+      // Changes (Adjusted Words Only)
       $("changesOut").textContent = (data.changes || []).join("\n") || "-";
 
       // Timeline analysis (RED if issues)
@@ -316,11 +445,7 @@
       box.classList.toggle("danger", issues.length > 0);
       box.classList.toggle("good", issues.length === 0);
 
-      $("reportStatus").textContent = res.ok ? "Done ✅" : "Error ❌";
-      if(!res.ok){
-        $("timelineBox").classList.add("danger");
-        $("timelineBox").textContent = JSON.stringify(data, null, 2);
-      }
+      $("reportStatus").textContent = "Done ✅";
     }catch(err){
       $("reportStatus").textContent = "Error ❌";
       $("timelineBox").classList.add("danger");
@@ -328,11 +453,11 @@
     }
   };
 
-  function resetOutputs(){
+  function clearReportOutputs(){
     $("finalOut").textContent = "";
+    $("timelineBox").textContent = "";
     $("companiesOut").textContent = "";
     $("changesOut").textContent = "";
-    $("timelineBox").textContent = "";
     $("timelineBox").classList.remove("danger","good");
   }
 </script>
