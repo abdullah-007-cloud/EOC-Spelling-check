@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const changesEl = document.getElementById("changes");
   const changesCountEl = document.getElementById("changesCount");
   const timelineEl = document.getElementById("timeline");
+  const timelineCard = document.getElementById("timelineCard");
 
   const themeSelect = document.getElementById("themeSelect");
 
@@ -18,17 +19,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const protectedChipsEl = document.getElementById("protectedChips");
   const detectedCompaniesChipsEl = document.getElementById("detectedCompaniesChips");
 
-  const timelineCard = document.getElementById("timelineCard");
+  // Chat
+  const chatLog = document.getElementById("chatLog");
+  const chatInput = document.getElementById("chatInput");
+  const chatSend = document.getElementById("chatSend");
+  const chatClear = document.getElementById("chatClear");
 
-  // Quick sanity check (prevents silent "nothing happens")
-  const required = [inputEl, outputEl, runBtn, copyBtn, statusEl, errorEl, langEl, changesEl, changesCountEl, timelineEl, themeSelect, protectedEl, protectedChipsEl, detectedCompaniesChipsEl, timelineCard];
-  if (required.some(x => !x)) {
-    console.error("Missing DOM elements. Check IDs in index.html.");
-    alert("Page elements missing. Please re-copy index.html and app.js exactly.");
-    return;
-  }
-
-  // ===== Themes =====
+  // ===== Theme =====
   function setTheme(theme) {
     document.documentElement.setAttribute("data-theme", theme);
     localStorage.setItem("amaalaTheme", theme);
@@ -55,9 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ===== Protected Terms =====
   function parseProtectedTerms() {
     const raw = (protectedEl.value || "");
-    return Array.from(new Set(
-      raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean)
-    ));
+    return Array.from(new Set(raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean)));
   }
 
   function setProtectedTerms(terms) {
@@ -87,16 +82,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   loadProtectedTerms();
 
-  // ===== Smarter Company Detection =====
+  // ===== Company Detection (smart) =====
   function cleanCompanyName(raw) {
     let s = (raw || "").trim().replace(/\s+/g, " ");
-
-    // Keep only after LAST "from"
     const lower = s.toLowerCase();
     const idx = lower.lastIndexOf(" from ");
     if (idx !== -1) s = s.slice(idx + " from ".length).trim();
 
-    // Strip junk leading words
     const junkStarts = [
       "a","an","the",
       "call","phone","telephone","radio",
@@ -112,15 +104,12 @@ document.addEventListener("DOMContentLoaded", () => {
     s = s.replace(/[-–—,:;.\s]+$/g, "").trim();
     if (!/[A-Za-z]/.test(s)) return null;
     if (s.length < 2) return null;
-
     return s;
   }
 
   function detectCompanies(text) {
     const companies = new Set();
-    const regex =
-      /\b((?:[A-Za-z0-9&.\-\/]+\s+){0,5}[A-Za-z0-9&.\-\/]+)\s+(?:CO|Co)\b\s*[.,;:]?,?/g;
-
+    const regex = /\b((?:[A-Za-z0-9&.\-\/]+\s+){0,5}[A-Za-z0-9&.\-\/]+)\s+(?:CO|Co)\b\s*[.,;:]?,?/g;
     let m;
     while ((m = regex.exec(text)) !== null) {
       const cleaned = cleanCompanyName(m[1]);
@@ -133,14 +122,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const detected = detectCompanies(text);
     renderChips(detectedCompaniesChipsEl, detected);
 
-    // Auto add to Protected Terms
     const merged = Array.from(new Set([...parseProtectedTerms(), ...detected]));
     setProtectedTerms(merged);
-
     return detected;
   }
 
-  // ===== Spell Check (LanguageTool public API) =====
+  // ===== LanguageTool Spell Check =====
   async function checkSpelling(text, language) {
     const params = new URLSearchParams();
     params.append("text", text);
@@ -188,7 +175,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return changes.map(c => `${c.before} → ${c.after}`).join("\n");
   }
 
-  // ===== Timeline Validation + Fix =====
+  // ===== Timeline =====
   function parseTimeToken(tokenDigits) {
     let hh, mm;
     if (tokenDigits.length === 3) {
@@ -252,14 +239,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const issues = [];
     let hasCriticalError = false;
 
-    // invalid timestamps
     const invalids = findInvalidTimestamps(text);
     if (invalids.length) {
       hasCriticalError = true;
       issues.push(...invalids);
     }
 
-    // out-of-order timestamps (valid only)
     const blocks = splitIntoTimestampBlocks(text);
     const timed = blocks.filter(b => b.time);
 
@@ -285,6 +270,7 @@ document.addEventListener("DOMContentLoaded", () => {
             issues.push(`Out-of-order timestamp detected: "${b.lines[0].trim()}"`);
           }
         }
+
         lastAdj = adj;
         lastBase = base;
       }
@@ -336,7 +322,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return sorted.map(b => b.lines.join("\n")).join("\n");
   }
 
-  // ===== Actions =====
+  // ===== Core Actions =====
   function setBusy(b) {
     runBtn.disabled = b;
     copyBtn.disabled = b;
@@ -361,18 +347,14 @@ document.addEventListener("DOMContentLoaded", () => {
       setBusy(true);
       statusEl.textContent = "Checking report…";
 
-      // Companies + protect
       updateDetectedCompanies(raw);
 
-      // Chronology fix
       const chronoFixed = fixChronology(raw);
 
-      // Timeline after fix
       const t1 = analyzeTimeline(chronoFixed);
       timelineEl.textContent = t1.issues.join("\n");
       setTimelineAlert(t1.hasCriticalError);
 
-      // Spell check
       const data = await checkSpelling(chronoFixed, langEl.value);
       const matches = data.matches || [];
       const protectedTerms = parseProtectedTerms();
@@ -383,7 +365,6 @@ document.addEventListener("DOMContentLoaded", () => {
       changesEl.textContent = formatChanges(changes, matches.length);
       changesCountEl.textContent = changes.length ? `(${changes.length})` : "";
 
-      // Timeline on final
       const t2 = analyzeTimeline(updated);
       timelineEl.textContent = t2.issues.join("\n");
       setTimelineAlert(t2.hasCriticalError);
@@ -401,7 +382,6 @@ document.addEventListener("DOMContentLoaded", () => {
   async function copyResult() {
     const text = outputEl.textContent || "";
     if (!text || text.startsWith("(")) return;
-
     try {
       await navigator.clipboard.writeText(text);
       statusEl.textContent = "Copied ✅";
@@ -411,11 +391,73 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // ===== Button bindings (THIS is what was missing for you) =====
+  // ===== CHAT =====
+  function addMsg(role, text) {
+    const row = document.createElement("div");
+    row.className = `msg ${role}`;
+
+    const av = document.createElement("div");
+    av.className = "avatar";
+    av.textContent = role === "me" ? "You" : "AI";
+
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+    bubble.textContent = text;
+
+    row.appendChild(av);
+    row.appendChild(bubble);
+    chatLog.appendChild(row);
+    chatLog.scrollTop = chatLog.scrollHeight;
+  }
+
+  function botReply(userText) {
+    const t = (userText || "").trim().toLowerCase();
+
+    if (t === "check" || t.includes("check report") || t.includes("run")) {
+      addMsg("bot", "Got you. Running Check Report الآن… ✅");
+      runCheck();
+      return;
+    }
+
+    if (t.includes("copy")) {
+      addMsg("bot", "Copy Result button موجود فوق 👆 اضغطه وراح ينسخ الناتج.");
+      return;
+    }
+
+    if (t.includes("company")) {
+      addMsg("bot", "الشركات تُكتشف تلقائيًا من أي كلمة قبل “Co/CO”. وتندمج تلقائيًا في Protected Terms عشان ما تتخرب.");
+      return;
+    }
+
+    addMsg("bot", "اكتب “check” عشان أشغّل الفحص بالكامل، أو قلّي تبغى الجملة بصياغة أكثر رسمية/أقصر/أوضح.");
+  }
+
+  function sendChat() {
+    const text = (chatInput.value || "").trim();
+    if (!text) return;
+    addMsg("me", text);
+    chatInput.value = "";
+    botReply(text);
+  }
+
+  // ===== Bind Buttons =====
   runBtn.addEventListener("click", runCheck);
   copyBtn.addEventListener("click", copyResult);
 
-  // Live preview
+  chatSend.addEventListener("click", sendChat);
+  chatClear.addEventListener("click", () => {
+    chatLog.innerHTML = "";
+    addMsg("bot", "Chat cleared. Type “check” whenever you want. 💬");
+  });
+
+  chatInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendChat();
+    }
+  });
+
+  // ===== Live Preview =====
   inputEl.addEventListener("input", () => {
     updateDetectedCompanies(inputEl.value || "");
     const t = analyzeTimeline(inputEl.value || "");
@@ -423,7 +465,8 @@ document.addEventListener("DOMContentLoaded", () => {
     setTimelineAlert(t.hasCriticalError);
   });
 
-  // Initial state
+  // ===== Initial =====
+  addMsg("bot", "Hey 👋 Paste the report on the left, then click “Check Report” or type “check” here.");
   updateDetectedCompanies(inputEl.value || "");
   const t0 = analyzeTimeline(inputEl.value || "");
   timelineEl.textContent = t0.issues.join("\n");
