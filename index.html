@@ -13,6 +13,7 @@
       --line: rgba(255,255,255,.14);
       --accent:#7cf7ff; --accent2:#b6ff7c; --danger:#ff4d6d;
       --shadow: 0 18px 60px rgba(0,0,0,.35);
+      --radius: 18px;
       --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     }
     html[data-theme="light"]{
@@ -262,6 +263,7 @@
       opacity:.9;
     }
 
+    /* ===== Timeline Alert (RED) ===== */
     .card.alert {
       border-color: var(--danger) !important;
       box-shadow:
@@ -275,80 +277,6 @@
         transparent
       );
     }
-
-    /* Chat UI */
-    .chatLog{
-      border-radius: 16px;
-      border:1px solid var(--line);
-      background: rgba(0,0,0,.10);
-      padding: 12px;
-      min-height: 180px;
-      max-height: 240px;
-      overflow:auto;
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-    }
-    html[data-theme="light"] .chatLog{ background: rgba(255,255,255,.62); }
-
-    .msg{
-      display:flex;
-      gap:10px;
-      align-items:flex-start;
-    }
-    .bubble{
-      border:1px solid var(--line);
-      background: rgba(255,255,255,.06);
-      padding: 10px 12px;
-      border-radius: 14px;
-      max-width: 100%;
-      font-size: 13px;
-      line-height:1.55;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-    .me .bubble{
-      background: radial-gradient(160px 90px at 18% 20%, color-mix(in oklab, var(--accent) 22%, transparent), transparent 65%),
-                  rgba(255,255,255,.06);
-      border-color: color-mix(in oklab, var(--accent) 30%, var(--line));
-    }
-    .bot .bubble{
-      background: radial-gradient(160px 90px at 18% 20%, color-mix(in oklab, var(--accent2) 18%, transparent), transparent 65%),
-                  rgba(255,255,255,.06);
-      border-color: color-mix(in oklab, var(--accent2) 28%, var(--line));
-    }
-    .avatar{
-      width:28px; height:28px;
-      border-radius:10px;
-      border:1px solid var(--line);
-      background: rgba(255,255,255,.06);
-      display:grid;
-      place-items:center;
-      font-size: 14px;
-      font-weight:1000;
-      flex: 0 0 auto;
-    }
-    .chatRow{
-      display:flex;
-      gap:10px;
-      margin-top: 10px;
-    }
-    .chatInput{
-      flex:1;
-      min-height: 46px;
-      border-radius: 14px;
-      border:1px solid var(--line);
-      background: rgba(0,0,0,.10);
-      color: var(--text);
-      padding: 10px 12px;
-      outline:none;
-      resize:none;
-      font-size: 13px;
-      line-height: 1.4;
-    }
-    html[data-theme="light"] .chatInput{ background: rgba(255,255,255,.62); }
-    .chatBtns{ display:flex; gap:10px; }
-    .btn.small{ padding:10px 12px; border-radius:14px; }
   </style>
 </head>
 
@@ -358,6 +286,7 @@
       <div class="topbar">
         <div class="brand">
           <div class="logoBox" title="EOC Logo">
+            <!-- Put your image in repo root as: logo.png -->
             <img src="logo.png" alt="EOC Logo" />
           </div>
           <div class="brandTitle">
@@ -452,6 +381,7 @@
           </div>
         </div>
 
+        <!-- TIMELINE CARD (will turn RED if critical timestamp error exists) -->
         <div class="card" id="timelineCard">
           <div class="cardHeader">
             <div>
@@ -463,30 +393,6 @@
             <pre id="timeline">(Timeline analysis will appear here)</pre>
           </div>
         </div>
-
-        <!-- ✅ CHAT BOX IS BACK -->
-        <div class="card" id="chatCard">
-          <div class="cardHeader">
-            <div>
-              <div class="title">💬 AMAALA EOC Assistant</div>
-              <div class="sub">Type “check” to run, or ask for wording.</div>
-            </div>
-          </div>
-          <div class="cardBody">
-            <div id="chatLog" class="chatLog"></div>
-
-            <div class="chatRow">
-              <textarea id="chatInput" class="chatInput" rows="2" placeholder="Type here… (e.g., 'check', 'make it more formal', 'fix the last line')"></textarea>
-              <div class="chatBtns">
-                <button id="chatSend" class="btn small primary" type="button">Send</button>
-                <button id="chatClear" class="btn small" type="button">Clear</button>
-              </div>
-            </div>
-
-            <div class="mini">Tip: Paste report on the left, then either click “Check Report” or type “check” here.</div>
-          </div>
-        </div>
-
       </div>
     </div>
 
